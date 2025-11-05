@@ -5,12 +5,17 @@ namespace App\Livewire\Reservas;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class Index extends Component
 {
     use WithPagination;
 
     public $search = '';
+    public $fecha_inicio = '';
+    public $fecha_fin = '';
+    public $estado_filtro = '';
+
     public $mostrarModalVer = false;
     public $mostrarModalEditar = false;
     public $reservaSeleccionada = null;
@@ -24,7 +29,7 @@ class Index extends Component
     public $edit_estado;
     public $edit_estacionamiento_no_espacio;
 
-    protected $queryString = ['search'];
+    protected $queryString = ['search', 'fecha_inicio', 'fecha_fin', 'estado_filtro'];
     protected $listeners = ['reserva-creada' => '$refresh', 'reserva-eliminada' => '$refresh', 'reserva-actualizada' => '$refresh'];
 
     public function updatingSearch()
@@ -32,9 +37,30 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatingFechaInicio()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFechaFin()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingEstadoFiltro()
+    {
+        $this->resetPage();
+    }
+
+    public function limpiarFiltros()
+    {
+        $this->reset(['search', 'fecha_inicio', 'fecha_fin', 'estado_filtro']);
+        $this->resetPage();
+    }
+
     public function render()
     {
-        $reservas = DB::table('reservas')
+        $query = DB::table('reservas')
             ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
             ->leftJoin('plat_reserva', 'reservas.plat_reserva_idplat_reserva', '=', 'plat_reserva.idplat_reserva')
             ->leftJoin('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
@@ -49,13 +75,32 @@ class Index extends Component
                 'habitaciones.precio',
                 'habitaciones.no_habitacion',
                 'habitaciones.tipo as tipo_habitacion'
-            )
-            ->when($this->search, function ($query) {
-                $query->where('clientes.nom_completo', 'like', '%' . $this->search . '%')
-                      ->orWhere('reservas.idreservas', 'like', '%' . $this->search . '%');
-            })
-            ->orderBy('reservas.idreservas', 'desc')
-            ->paginate(10);
+            );
+
+        // Filtro por búsqueda (nombre, folio o ID)
+        if ($this->search) {
+            $query->where(function($q) {
+                $q->where('clientes.nom_completo', 'like', '%' . $this->search . '%')
+                  ->orWhere('reservas.folio', 'like', '%' . $this->search . '%')
+                  ->orWhere('reservas.idreservas', 'like', '%' . $this->search . '%');
+            });
+        }
+
+        // Filtro por rango de fechas
+        if ($this->fecha_inicio && $this->fecha_fin) {
+            $query->whereBetween('reservas.fecha_check_in', [$this->fecha_inicio, $this->fecha_fin]);
+        } elseif ($this->fecha_inicio) {
+            $query->where('reservas.fecha_check_in', '>=', $this->fecha_inicio);
+        } elseif ($this->fecha_fin) {
+            $query->where('reservas.fecha_check_in', '<=', $this->fecha_fin);
+        }
+
+        // Filtro por estado
+        if ($this->estado_filtro) {
+            $query->where('reservas.estado', $this->estado_filtro);
+        }
+
+        $reservas = $query->orderBy('reservas.idreservas', 'desc')->paginate(10);
 
         // Calcular totales para cada reserva
         foreach ($reservas as $reserva) {
@@ -70,19 +115,13 @@ class Index extends Component
     // Método para calcular el total
     private function calcularTotal($reserva)
     {
-        // Calcular días de estancia
-        $checkIn = \Carbon\Carbon::parse($reserva->fecha_check_in);
-        $checkOut = \Carbon\Carbon::parse($reserva->fecha_check_out);
+        $checkIn = Carbon::parse($reserva->fecha_check_in);
+        $checkOut = Carbon::parse($reserva->fecha_check_out);
         $dias = $checkOut->diffInDays($checkIn);
 
-        // Subtotal (precio * días)
         $subtotal = ($reserva->precio ?? 0) * $dias;
-
-        // Calcular comisión
-        $comision = ($reserva->comision ?? 0) / 100; // Convertir porcentaje a decimal
+        $comision = ($reserva->comision ?? 0) / 100;
         $montoComision = $subtotal * $comision;
-
-        // Total final
         $total = $subtotal + $montoComision;
 
         return [
@@ -126,7 +165,6 @@ class Index extends Component
                 ->first();
 
             if ($this->reservaSeleccionada) {
-                // Calcular total para la reserva seleccionada
                 $this->reservaSeleccionada->total_calculado = $this->calcularTotal($this->reservaSeleccionada);
                 $this->mostrarModalVer = true;
             } else {
@@ -149,10 +187,7 @@ class Index extends Component
             $this->reservaSeleccionada = DB::table('reservas')
                 ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
                 ->where('reservas.idreservas', $id)
-                ->select(
-                    'reservas.*',
-                    'clientes.nom_completo',
-                )
+                ->select('reservas.*', 'clientes.nom_completo')
                 ->first();
 
             if ($this->reservaSeleccionada) {
@@ -185,7 +220,7 @@ class Index extends Component
             'edit_fecha_check_in' => 'required|date',
             'edit_fecha_check_out' => 'required|date|after:edit_fecha_check_in',
             'edit_no_personas' => 'required|integer|min:1',
-            'edit_estado' => 'required|in:pendiente,confirmada,cancelada',
+            'edit_estado' => 'required|in:pendiente,confirmada,cancelada,completada',
         ]);
 
         try {
@@ -206,11 +241,6 @@ class Index extends Component
         } catch (\Exception $e) {
             session()->flash('error', 'Error al actualizar la reserva: ' . $e->getMessage());
         }
-    }
-
-    public function confirmarEliminar($id)
-    {
-        $this->dispatch('confirm-delete', ['id' => $id]);
     }
 
     public function eliminar($id)
@@ -249,6 +279,56 @@ class Index extends Component
         } catch (\Exception $e) {
             DB::rollBack();
             session()->flash('error', 'Error al cancelar la reserva: ' . $e->getMessage());
+        }
+    }
+
+    public function liberar($id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $reserva = DB::table('reservas')->where('idreservas', $id)->first();
+
+            if ($reserva) {
+                // Verificar que la fecha de checkout haya pasado o sea hoy
+                $fechaCheckout = Carbon::parse($reserva->fecha_check_out);
+                if ($fechaCheckout->isFuture()) {
+                    session()->flash('warning', 'No se puede liberar la reserva antes de la fecha de check-out.');
+                    return;
+                }
+
+                // Cambiar estado a completada
+                DB::table('reservas')
+                    ->where('idreservas', $id)
+                    ->update(['estado' => 'completada']);
+
+                // Liberar habitaciones
+                $habitacion = DB::table('habitaciones_has_reservas')
+                    ->where('reservas_idreservas', $id)
+                    ->first();
+
+                if ($habitacion) {
+                    DB::table('habitaciones')
+                        ->where('idhabitacion', $habitacion->habitaciones_idhabitacion)
+                        ->update(['estado' => 'disponible']);
+                }
+
+                // Liberar estacionamiento
+                if ($reserva->estacionamiento_no_espacio) {
+                    DB::table('estacionamiento')
+                        ->where('no_espacio', $reserva->estacionamiento_no_espacio)
+                        ->update(['estado' => 'disponible']);
+                }
+
+                DB::commit();
+                session()->flash('message', 'Reserva liberada exitosamente.');
+                $this->dispatch('reserva-actualizada');
+            } else {
+                session()->flash('error', 'Reserva no encontrada.');
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Error al liberar la reserva: ' . $e->getMessage());
         }
     }
 }

@@ -13,7 +13,7 @@ class CroquisHabitaciones extends Component
     public $mostrarModal = false;
     public $plantaActiva = 'Planta 1';
 
-    protected $listeners = ['reserva-actualizada' => '$refresh'];
+    protected $listeners = ['reserva-actualizada' => '$refresh', 'habitacion-estado-cambiado' => 'cargarHabitaciones'];
 
     public function mount()
     {
@@ -35,6 +35,7 @@ class CroquisHabitaciones extends Component
                 ->leftJoin('habitaciones_has_reservas', 'habitaciones.idhabitacion', '=', 'habitaciones_has_reservas.habitaciones_idhabitacion')
                 ->leftJoin('reservas', function($join) {
                     $join->on('habitaciones_has_reservas.reservas_idreservas', '=', 'reservas.idreservas')
+                        ->where('reservas.estado', '=', 'confirmada')
                         ->where('reservas.fecha_check_out', '>=', now()->toDateString());
                 })
                 ->leftJoin('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
@@ -58,7 +59,6 @@ class CroquisHabitaciones extends Component
                 ->toArray();
 
             $this->habitacionesPorPlanta[$planta] = $habitaciones;
-
         }
 
         // Si no hay planta activa o no existe, asignar la primera
@@ -67,7 +67,6 @@ class CroquisHabitaciones extends Component
                 $this->plantaActiva = $plantas[0];
             }
         }
-
     }
 
     public function seleccionarHabitacion($idhabitacion)
@@ -94,6 +93,24 @@ class CroquisHabitaciones extends Component
         $this->habitacionSeleccionada = null;
     }
 
+    public function cambiarEstadoHabitacion($idhabitacion, $nuevoEstado)
+    {
+        try {
+            DB::table('habitaciones')
+                ->where('idhabitacion', $idhabitacion)
+                ->update(['estado' => $nuevoEstado]);
+
+            session()->flash('message', 'Estado de la habitación actualizado exitosamente.');
+
+            $this->cargarHabitaciones();
+            $this->cerrarModal();
+
+            $this->dispatch('habitacion-estado-cambiado');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error al cambiar el estado: ' . $e->getMessage());
+        }
+    }
+
     public function render()
     {
         $plantas = array_keys($this->habitacionesPorPlanta);
@@ -102,7 +119,7 @@ class CroquisHabitaciones extends Component
         $totalHabitaciones = count($habitacionesActuales);
         $disponibles = collect($habitacionesActuales)->where('estado', 'disponible')->count();
         $ocupadas = collect($habitacionesActuales)->where('estado', 'ocupada')->count();
-        $mantenimiento = collect($habitacionesActuales)->where('estado', 'mantenimiento')->count();
+        $mantenimiento = collect($habitacionesActuales)->where('estado', 'en_mantenimiento')->count();
 
         return view('livewire.habitaciones.croquis-habitaciones', [
             'plantas' => $plantas,

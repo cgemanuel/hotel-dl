@@ -1,89 +1,104 @@
-<div class="w-full mx-auto p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg">
-    <h2 class="text-3xl font-bold text-white mb-2">Croquis de Habitaciones</h2>
-    <p class="text-gray-400 mb-6">Haz clic en una habitación para ver detalles</p>
+{{-- Contenedor principal del croquis de habitaciones --}}
+<div class="w-full p-4 bg-gradient-to-br from-green-900 to-green-800 rounded-lg">
 
-    <!-- Tabs de Plantas -->
-    <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
-        @foreach($plantas as $planta)
-            <button
-                wire:click="cambiarPlanta('{{ $planta }}')"
-                class="px-6 py-2 rounded-lg font-semibold transition-all duration-200 whitespace-nowrap {{ $plantaActiva === $planta ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' }}"
-            >
-                {{ $planta }}
-            </button>
-        @endforeach
-    </div>
+    {{-- Encabezado y selección de planta --}}
+    <div class="px-2 md:px-4">
+        <h2 class="text-3xl font-bold text-white mb-2">Croquis de Habitaciones</h2>
+        <p class="text-gray-300 mb-6">Haz clic en una habitación para ver detalles</p>
 
-    <!-- Estadísticas de la Planta -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <p class="text-gray-400 text-sm">Total de Habitaciones</p>
-            <p class="text-2xl font-bold text-white mt-2">{{ $totalHabitaciones }}</p>
-        </div>
-        <div class="bg-green-900 bg-opacity-50 rounded-lg p-4 border border-green-700">
-            <p class="text-green-300 text-sm">Disponibles</p>
-            <p class="text-2xl font-bold text-green-400 mt-2">{{ $disponibles }}</p>
-        </div>
-        <div class="bg-red-900 bg-opacity-50 rounded-lg p-4 border border-red-700">
-            <p class="text-red-300 text-sm">Ocupadas</p>
-            <p class="text-2xl font-bold text-red-400 mt-2">{{ $ocupadas }}</p>
-        </div>
-        <div class="bg-yellow-900 bg-opacity-50 rounded-lg p-4 border border-yellow-700">
-            <p class="text-yellow-300 text-sm">En Mantenimiento</p>
-            <p class="text-2xl font-bold text-yellow-400 mt-2">{{ $mantenimiento }}</p>
+        <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+            @foreach($plantas as $planta)
+                <button
+                    wire:click="cambiarPlanta('{{ $planta }}')"
+                    class="px-6 py-2 rounded-lg font-semibold transition-all duration-200 whitespace-nowrap {{ $plantaActiva === $planta ? 'bg-amber-600 text-white' : 'bg-green-700 text-gray-300 hover:bg-green-600' }}"
+                >
+                    {{ $planta }}
+                </button>
+            @endforeach
         </div>
     </div>
 
-    <!-- Grid de Habitaciones - MEJORADO -->
+    {{-- Panel de Resumen --}}
+    <div class="bg-gray-800 bg-opacity-30 rounded-xl p-6 mb-8 mx-2 md:mx-4">
+        <h3 class="text-xl font-semibold text-white mb-4">Estado de Habitaciones</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-gray-800 bg-opacity-50 rounded-lg p-4">
+                <p class="text-gray-300 text-sm">Total de Habitaciones</p>
+                <p class="text-3xl font-bold text-white mt-2">{{ $totalHabitaciones }}</p>
+            </div>
+            <div class="bg-green-500 bg-opacity-20 rounded-lg p-4">
+                <p class="text-green-100 text-sm">Disponibles</p>
+                <p class="text-3xl font-bold text-green-300 mt-2">{{ $disponibles }}</p>
+            </div>
+            <div class="bg-red-500 bg-opacity-20 rounded-lg p-4">
+                <p class="text-red-100 text-sm">Ocupadas</p>
+                <p class="text-3xl font-bold text-red-300 mt-2">{{ $ocupadas }}</p>
+            </div>
+            <div class="bg-yellow-500 bg-opacity-20 rounded-lg p-4">
+                <p class="text-yellow-100 text-sm">En Mantenimiento</p>
+                <p class="text-3xl font-bold text-yellow-300 mt-2">{{ $mantenimiento }}</p>
+            </div>
+        </div>
+    </div>
+
+    {{-- Cuadrícula de habitaciones --}}
     <div class="min-h-[400px] mb-8">
         @if(count($habitacionesActuales) > 0)
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
                 @foreach($habitacionesActuales as $habitacion)
                     @php
-                        $colores = [
-                            'disponible' => 'bg-green-500 hover:bg-green-600',
-                            'ocupada' => 'bg-red-500 hover:bg-red-600',
-                            'mantenimiento' => 'bg-yellow-500 hover:bg-yellow-600',
-                        ];
-                        $colorClase = $colores[$habitacion->estado] ?? 'bg-gray-500';
+                        // Normalizar el estado - quitar espacios y convertir a minúsculas
+                        $estadoNormalizado = strtolower(str_replace(' ', '_', trim($habitacion->estado ?? '')));
+
+                        // Determinar clases según el estado
+                        if ($estadoNormalizado === 'disponible') {
+                            $bgClase = 'bg-green-800 hover:bg-green-900';
+                            $borderClase = 'border-green-400';
+                            $textClase = 'text-white';
+                            $tagClase = 'bg-green-100 text-green-800';
+                        } elseif ($estadoNormalizado === 'ocupada') {
+                            $bgClase = 'bg-red-800 hover:bg-red-700';
+                            $borderClase = 'border-red-400';
+                            $textClase = 'text-white';
+                            $tagClase = 'bg-red-100 text-red-800';
+                        } elseif (in_array($estadoNormalizado, ['en_mantenimiento', 'mantenimiento'])) {
+                            $bgClase = 'bg-yellow-500 hover:bg-yellow-600';
+                            $borderClase = 'border-yellow-400';
+                            $textClase = 'text-white';
+                            $tagClase = 'bg-yellow-100 text-yellow-800';
+                        } else {
+                            $bgClase = 'bg-gray-600 hover:bg-gray-700';
+                            $borderClase = 'border-gray-400';
+                            $textClase = 'text-white';
+                            $tagClase = 'bg-gray-100 text-gray-800';
+                        }
                     @endphp
+
+                    {{-- Tarjeta de habitación --}}
                     <button
                         wire:click="seleccionarHabitacion({{ $habitacion->idhabitacion }})"
-                        class="p-4 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg flex flex-col items-center justify-center text-white font-bold {{ $colorClase }} min-h-[120px]"
+                        class="w-full h-72 rounded-2xl overflow-hidden shadow-xl border-4 {{ $bgClase }} {{ $borderClase }} {{ $textClase }} transition-all duration-500 transform hover:scale-105 hover:shadow-2xl"
                     >
-                        <div class="text-xl">Hab. {{ $habitacion->no_habitacion }}</div>
-                        <div class="text-xs opacity-80 capitalize mt-1">{{ $habitacion->tipo }}</div>
-                        <div class="text-xs opacity-80 capitalize mt-1">{{ $habitacion->estado }}</div>
+                        <div class="h-full flex flex-col items-center justify-center p-6">
+                            <span class="text-5xl font-bold mb-4">{{ $habitacion->no_habitacion }}</span>
+                            <h3 class="text-2xl font-semibold capitalize mb-2">{{ $habitacion->tipo }}</h3>
+                            <p class="text-lg opacity-90">${{ number_format($habitacion->precio, 2) }} por noche</p>
+
+                            <span class="mt-4 px-4 py-2 rounded-full text-sm font-medium capitalize {{ $tagClase }}">
+                                {{ str_replace('_', ' ', $habitacion->estado) }}
+                            </span>
+                        </div>
                     </button>
                 @endforeach
             </div>
         @else
-            <div class="text-center text-gray-400 py-12">
+            <div class="text-center text-gray-300 py-12">
                 <p class="text-xl">No hay habitaciones en esta planta</p>
             </div>
         @endif
     </div>
 
-    <!-- Leyenda -->
-    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-        <p class="text-gray-300 text-sm font-semibold mb-3">Leyenda:</p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="flex items-center gap-2">
-                <div class="w-6 h-6 bg-green-500 rounded"></div>
-                <span class="text-gray-300 text-sm">Disponible</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-6 h-6 bg-red-500 rounded"></div>
-                <span class="text-gray-300 text-sm">Ocupada</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-6 h-6 bg-yellow-500 rounded"></div>
-                <span class="text-gray-300 text-sm">En Mantenimiento</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Detalles -->
+    {{-- Modal de información de habitación --}}
     @if($mostrarModal && $habitacionSeleccionada)
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
              wire:click.self="cerrarModal">
@@ -103,6 +118,7 @@
                 </div>
 
                 <div class="p-6 space-y-4">
+                    {{-- Información general --}}
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Tipo</p>
                         <p class="font-semibold text-gray-900 dark:text-white mt-1 capitalize">
@@ -117,24 +133,57 @@
                         </p>
                     </div>
 
+                    {{-- Estado actual --}}
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Estado</p>
-                        <div class="flex items-center gap-2 mt-1">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Estado Actual</p>
+                        <div class="flex items-center gap-2 mb-3">
                             @php
-                                $colorBg = match($habitacionSeleccionada['estado']) {
-                                    'disponible' => 'bg-green-500',
-                                    'ocupada' => 'bg-red-500',
-                                    'mantenimiento' => 'bg-yellow-500',
-                                    default => 'bg-gray-500'
-                                };
+                                $modalEstado = strtolower(str_replace(' ', '_', trim($habitacionSeleccionada['estado'])));
+
+                                if ($modalEstado === 'disponible') {
+                                    $colorBg = 'bg-green-500';
+                                } elseif ($modalEstado === 'ocupada') {
+                                    $colorBg = 'bg-red-500';
+                                } elseif (in_array($modalEstado, ['en_mantenimiento', 'mantenimiento'])) {
+                                    $colorBg = 'bg-yellow-500';
+                                } else {
+                                    $colorBg = 'bg-gray-500';
+                                }
                             @endphp
                             <div class="w-4 h-4 rounded {{ $colorBg }}"></div>
                             <p class="font-semibold text-gray-900 dark:text-white capitalize">
-                                {{ $habitacionSeleccionada['estado'] }}
+                                {{ str_replace('_', ' ', $habitacionSeleccionada['estado']) }}
                             </p>
+                        </div>
+
+                        {{-- Botones para cambiar estado --}}
+                        <div class="flex flex-col gap-2 mt-4">
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cambiar Estado:</p>
+                            <button
+                                wire:click="cambiarEstadoHabitacion({{ $habitacionSeleccionada['idhabitacion'] }}, 'disponible')"
+                                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
+                                wire:confirm="¿Desea cambiar el estado a Disponible?"
+                            >
+                                Marcar como Disponible
+                            </button>
+                            <button
+                                wire:click="cambiarEstadoHabitacion({{ $habitacionSeleccionada['idhabitacion'] }}, 'ocupada')"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm"
+                                wire:confirm="¿Desea cambiar el estado a Ocupada?"
+                            >
+                                Marcar como Ocupada
+                            </button>
+                            <button
+                                wire:click="cambiarEstadoHabitacion({{ $habitacionSeleccionada['idhabitacion'] }}, 'en_mantenimiento')"
+                                class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors text-sm"
+                                wire:confirm="¿Desea cambiar el estado a Mantenimiento?"
+                            >
+                                Marcar en Mantenimiento
+                            </button>
                         </div>
                     </div>
 
+                    {{-- Información del cliente si la habitación está ocupada --}}
                     @if($habitacionSeleccionada['estado'] === 'ocupada' && isset($habitacionSeleccionada['nom_completo']))
                         <hr class="dark:border-gray-700">
 
@@ -144,15 +193,6 @@
                                 {{ $habitacionSeleccionada['nom_completo'] }}
                             </p>
                         </div>
-
-                        @if(isset($habitacionSeleccionada['telefono']))
-                        <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Teléfono</p>
-                            <p class="font-semibold text-gray-900 dark:text-white mt-1">
-                                {{ $habitacionSeleccionada['telefono'] }}
-                            </p>
-                        </div>
-                        @endif
 
                         @if(isset($habitacionSeleccionada['correo']))
                         <div>
@@ -193,17 +233,18 @@
                         <p class="text-center py-4 text-green-600 dark:text-green-400 font-semibold">
                             Habitación disponible para reservar
                         </p>
-                    @elseif($habitacionSeleccionada['estado'] === 'mantenimiento')
+                    @elseif($habitacionSeleccionada['estado'] === 'en_mantenimiento')
                         <p class="text-center py-4 text-yellow-600 dark:text-yellow-400 font-semibold">
                             En mantenimiento
                         </p>
                     @endif
                 </div>
 
+                {{-- Botón de cerrar modal --}}
                 <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 rounded-b-lg sticky bottom-0">
                     <button
                         wire:click="cerrarModal"
-                        class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                        class="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
                     >
                         Cerrar
                     </button>

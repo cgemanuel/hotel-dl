@@ -11,7 +11,7 @@ class CroquisEstacionamiento extends Component
     public $espacioSeleccionado = null;
     public $mostrarModal = false;
 
-    protected $listeners = ['reserva-actualizada' => '$refresh', 'espacioReservado' => '$refresh'];
+    protected $listeners = ['reserva-actualizada' => '$refresh', 'espacioReservado' => '$refresh', 'espacio-estado-cambiado' => 'cargarEspacios'];
 
     public function mount()
     {
@@ -21,7 +21,11 @@ class CroquisEstacionamiento extends Component
     public function cargarEspacios()
     {
         $this->espacios = DB::table('estacionamiento')
-            ->leftJoin('reservas', 'estacionamiento.no_espacio', '=', 'reservas.estacionamiento_no_espacio')
+            ->leftJoin('reservas', function($join) {
+                $join->on('estacionamiento.no_espacio', '=', 'reservas.estacionamiento_no_espacio')
+                    ->where('reservas.estado', '=', 'confirmada')
+                    ->where('reservas.fecha_check_out', '>=', now()->toDateString());
+            })
             ->leftJoin('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
             ->select(
                 'estacionamiento.no_espacio as numero',
@@ -49,15 +53,32 @@ class CroquisEstacionamiento extends Component
         $this->espacioSeleccionado = null;
     }
 
+    public function cambiarEstadoEspacio($numero, $nuevoEstado)
+    {
+        try {
+            DB::table('estacionamiento')
+                ->where('no_espacio', $numero)
+                ->update(['estado' => $nuevoEstado]);
+
+            session()->flash('message', 'Estado del espacio de estacionamiento actualizado exitosamente.');
+
+            $this->cargarEspacios();
+            $this->cerrarModal();
+
+            $this->dispatch('espacio-estado-cambiado');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error al cambiar el estado: ' . $e->getMessage());
+        }
+    }
+
     public function getColorEstadoProperty()
     {
         $colores = [
             'disponible' => 'bg-green-500 hover:bg-green-600',
             'ocupado' => 'bg-red-500 hover:bg-red-600',
-            'mantenimiento' => 'bg-yellow-500 hover:bg-yellow-600',
         ];
 
-        return $colores[$this->espacioSeleccionado['estado'] ?? 'disponible'] ?? 'bg-gray-500';
+        //return $colores[$this->espacioSeleccionado['estado'] ?? 'disponible'] ?? 'bg-gray-500';
     }
 
     public function render()

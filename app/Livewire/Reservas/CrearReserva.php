@@ -18,18 +18,24 @@ class CrearReserva extends Component
     public $edad = '';
     public $estado_origen = '';
     public $pais_origen = 'México';
-    public $telefono = '';
     public $correo = '';
 
     // Datos de la reserva
+    public $folio = ''; // Nuevo campo
     public $fecha_reserva;
     public $fecha_check_in = '';
     public $fecha_check_out = '';
     public $no_personas = 1;
     public $habitacion_id = '';
-    public $necesita_estacionamiento = false; // Por defecto No
+    public $necesita_estacionamiento = false;
     public $espacio_estacionamiento = '';
     public $plataforma_id = '';
+
+    // Método de pago - Nuevo
+    public $metodo_pago = '';
+    public $monto_efectivo = 0;
+    public $monto_tarjeta = 0;
+    public $monto_transferencia = 0;
 
     public $clientes = [];
     public $habitaciones = [];
@@ -43,12 +49,26 @@ class CrearReserva extends Component
     {
         $this->fecha_reserva = now()->format('Y-m-d');
         $this->cargarDatos();
+        $this->generarFolio();
+    }
+
+    public function generarFolio()
+    {
+        $fecha = now()->format('Ymd');
+        $ultimo = DB::table('reservas')
+            ->whereDate('fecha_reserva', now()->toDateString())
+            ->orderBy('idreservas', 'desc')
+            ->first();
+
+        $consecutivo = $ultimo ? (intval(substr($ultimo->folio ?? '0000', -4)) + 1) : 1;
+
+        $this->folio = 'RES-' . $fecha . '-' . str_pad($consecutivo, 4, '0', STR_PAD_LEFT);
     }
 
     public function cargarDatos()
     {
         $this->clientes = DB::table('clientes')
-            ->select('idclientes', 'nom_completo', 'telefono')
+            ->select('idclientes', 'nom_completo', 'correo')
             ->get();
 
         $this->habitaciones = DB::table('habitaciones')
@@ -57,13 +77,11 @@ class CrearReserva extends Component
 
         $this->plataformas = DB::table('plat_reserva')->get();
 
-        // Solo cargar estacionamientos si necesita
         if ($this->necesita_estacionamiento) {
             $this->cargarEstacionamientos();
         }
     }
 
-    // Método para cargar estacionamiento
     public function cargarEstacionamientos()
     {
         $this->espacios_estacionamiento = DB::table('estacionamiento')
@@ -71,13 +89,11 @@ class CrearReserva extends Component
             ->get();
     }
 
-    // Se ejecuta cuando cambia necesita_estacionamiento
     public function updatedNecesitaEstacionamiento($value)
     {
         if ($value) {
             $this->cargarEstacionamientos();
         } else {
-            // Si selecciona "No", limpiar el espacio seleccionado
             $this->espacio_estacionamiento = '';
             $this->espacios_estacionamiento = [];
         }
@@ -88,12 +104,14 @@ class CrearReserva extends Component
         $this->mostrarModal = true;
         $this->reset([
             'nom_completo', 'tipo_identificacion', 'no_identificacion',
-            'direccion', 'edad', 'estado_origen', 'telefono', 'correo',
+            'direccion', 'edad', 'estado_origen', 'correo',
             'fecha_check_in', 'fecha_check_out', 'no_personas',
-            'habitacion_id', 'necesita_estacionamiento', 'espacio_estacionamiento', 'plataforma_id'
+            'habitacion_id', 'necesita_estacionamiento', 'espacio_estacionamiento',
+            'plataforma_id', 'metodo_pago', 'monto_efectivo', 'monto_tarjeta', 'monto_transferencia'
         ]);
         $this->cliente_existente = false;
         $this->cargarDatos();
+        $this->generarFolio();
     }
 
     public function cerrar()
@@ -116,7 +134,6 @@ class CrearReserva extends Component
                 $this->edad = $cliente->edad;
                 $this->estado_origen = $cliente->estado_origen;
                 $this->pais_origen = $cliente->pais_origen;
-                $this->telefono = $cliente->telefono;
                 $this->correo = $cliente->correo;
                 $this->cliente_existente = true;
             }
@@ -124,14 +141,14 @@ class CrearReserva extends Component
             $this->cliente_existente = false;
             $this->reset([
                 'nom_completo', 'tipo_identificacion', 'no_identificacion',
-                'direccion', 'edad', 'estado_origen', 'telefono', 'correo'
+                'direccion', 'edad', 'estado_origen', 'correo'
             ]);
         }
     }
 
     public function guardar()
     {
-        // Validaciones con estacionamiento opcional
+        // Validaciones
         $this->validate([
             'nom_completo' => 'required|min:3',
             'tipo_identificacion' => 'required',
@@ -140,7 +157,6 @@ class CrearReserva extends Component
             'edad' => 'required|integer|min:18',
             'estado_origen' => 'required',
             'pais_origen' => 'required',
-            'telefono' => 'required|min:10',
             'correo' => 'required|email',
             'fecha_check_in' => 'required|date|after_or_equal:today',
             'fecha_check_out' => 'required|date|after:fecha_check_in',
@@ -149,6 +165,7 @@ class CrearReserva extends Component
             'necesita_estacionamiento' => 'boolean',
             'espacio_estacionamiento' => 'nullable|required_if:necesita_estacionamiento,1|exists:estacionamiento,no_espacio',
             'plataforma_id' => 'required|exists:plat_reserva,idplat_reserva',
+            'metodo_pago' => 'required|in:efectivo,tarjeta,transferencia,combinado',
         ], [
             'nom_completo.required' => 'El nombre completo es obligatorio',
             'tipo_identificacion.required' => 'Seleccione un tipo de identificación',
@@ -156,7 +173,17 @@ class CrearReserva extends Component
             'fecha_check_out.after' => 'La fecha de check-out debe ser posterior al check-in',
             'edad.min' => 'El cliente debe ser mayor de edad',
             'espacio_estacionamiento.required_if' => 'Debe seleccionar un espacio de estacionamiento',
+            'metodo_pago.required' => 'Debe seleccionar un método de pago',
         ]);
+
+        // Validar montos en pago combinado
+        if ($this->metodo_pago === 'combinado') {
+            $total = $this->monto_efectivo + $this->monto_tarjeta + $this->monto_transferencia;
+            if ($total <= 0) {
+                session()->flash('error', 'Debe ingresar al menos un monto en el pago combinado.');
+                return;
+            }
+        }
 
         try {
             DB::beginTransaction();
@@ -171,13 +198,14 @@ class CrearReserva extends Component
                     'edad' => $this->edad,
                     'estado_origen' => $this->estado_origen,
                     'pais_origen' => $this->pais_origen,
-                    'telefono' => $this->telefono,
+                    'telefono' => '0000000000', // Placeholder ya que ahora usamos folio
                     'correo' => $this->correo,
                 ]);
             }
 
-            // Crear reserva - estacionamiento puede ser null
+            // Crear reserva con folio y método de pago
             $reserva_id = DB::table('reservas')->insertGetId([
+                'folio' => $this->folio,
                 'fecha_reserva' => $this->fecha_reserva,
                 'fecha_check_in' => $this->fecha_check_in,
                 'fecha_check_out' => $this->fecha_check_out,
@@ -186,6 +214,10 @@ class CrearReserva extends Component
                 'clientes_idclientes' => $this->cliente_id,
                 'estacionamiento_no_espacio' => $this->necesita_estacionamiento ? $this->espacio_estacionamiento : null,
                 'plat_reserva_idplat_reserva' => $this->plataforma_id,
+                'metodo_pago' => $this->metodo_pago,
+                'monto_efectivo' => $this->metodo_pago === 'efectivo' || $this->metodo_pago === 'combinado' ? $this->monto_efectivo : null,
+                'monto_tarjeta' => $this->metodo_pago === 'tarjeta' || $this->metodo_pago === 'combinado' ? $this->monto_tarjeta : null,
+                'monto_transferencia' => $this->metodo_pago === 'transferencia' || $this->metodo_pago === 'combinado' ? $this->monto_transferencia : null,
             ]);
 
             // Relacionar habitación con reserva
@@ -199,7 +231,7 @@ class CrearReserva extends Component
                 ->where('idhabitacion', $this->habitacion_id)
                 ->update(['estado' => 'ocupada']);
 
-            // Solo actualizar estacionamiento si fue seleccionado
+            // Actualizar estacionamiento si fue seleccionado
             if ($this->necesita_estacionamiento && $this->espacio_estacionamiento) {
                 DB::table('estacionamiento')
                     ->where('no_espacio', $this->espacio_estacionamiento)
@@ -208,7 +240,7 @@ class CrearReserva extends Component
 
             DB::commit();
 
-            session()->flash('message', 'Reserva creada exitosamente.');
+            session()->flash('message', 'Reserva creada exitosamente. Folio: ' . $this->folio);
             $this->cerrar();
             $this->dispatch('reserva-creada');
 
@@ -217,8 +249,6 @@ class CrearReserva extends Component
             session()->flash('error', 'Error al crear la reserva: ' . $e->getMessage());
         }
     }
-
-
 
     public function render()
     {

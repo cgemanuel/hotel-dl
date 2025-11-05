@@ -38,8 +38,8 @@
                         </div>
 
                         <div>
-                            <label class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Teléfono</label>
-                            <p class="text-base text-zinc-900 dark:text-zinc-100">{{ $reservaSeleccionada->telefono }}</p>
+                            <label class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Folio</label>
+                            <p class="text-base text-zinc-900 dark:text-zinc-100">{{ $reservaSeleccionada->folio }}</p>
                         </div>
 
                         <div>
