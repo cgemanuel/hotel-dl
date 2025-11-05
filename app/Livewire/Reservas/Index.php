@@ -74,17 +74,17 @@ class Index extends Component
         $checkIn = \Carbon\Carbon::parse($reserva->fecha_check_in);
         $checkOut = \Carbon\Carbon::parse($reserva->fecha_check_out);
         $dias = $checkOut->diffInDays($checkIn);
-        
+
         // Subtotal (precio * días)
         $subtotal = ($reserva->precio ?? 0) * $dias;
-        
+
         // Calcular comisión
         $comision = ($reserva->comision ?? 0) / 100; // Convertir porcentaje a decimal
         $montoComision = $subtotal * $comision;
-        
+
         // Total final
         $total = $subtotal + $montoComision;
-        
+
         return [
             'dias' => $dias,
             'precio_noche' => $reserva->precio ?? 0,

@@ -163,7 +163,7 @@
                 <h4 class="text-lg font-semibold mb-3 text-zinc-900 dark:text-zinc-100">
                     💰 Desglose de Costos
                 </h4>
-                
+
                 <div class="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-4 space-y-3">
                     <!-- Subtotal -->
                     <div class="flex justify-between text-sm">
@@ -174,7 +174,7 @@
                             ${{ number_format($reservaSeleccionada->total_calculado['subtotal'], 2) }}
                         </span>
                     </div>
-                    
+
                     <!-- Comisión -->
                     @if($reservaSeleccionada->total_calculado['comision_porcentaje'] > 0)
                         <div class="flex justify-between text-sm text-orange-600 dark:text-orange-400">
@@ -186,7 +186,7 @@
                             </span>
                         </div>
                     @endif
-                    
+
                     <!-- Total -->
                     <div class="flex justify-between text-lg font-bold border-t border-zinc-300 dark:border-zinc-600 pt-3">
                         <span class="text-zinc-900 dark:text-zinc-100">Total a Pagar:</span>
