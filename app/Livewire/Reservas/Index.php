@@ -18,7 +18,13 @@ class Index extends Component
 
     public $mostrarModalVer = false;
     public $mostrarModalEditar = false;
+    public $mostrarModalEstacionamiento = false;
     public $reservaSeleccionada = null;
+
+    // Para modal de estacionamiento
+    public $reserva_para_estacionamiento = null;
+    public $espacio_seleccionado = '';
+    public $espacios_disponibles = [];
 
     // Datos para editar
     public $editando_id;
@@ -58,26 +64,145 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function asignarEstacionamiento($reservaId)
+    {
+        try {
+            $this->reserva_para_estacionamiento = $reservaId;
+
+            // Cargar reserva actual
+            $reserva = DB::table('reservas')
+                ->where('idreservas', $reservaId)
+                ->first();
+
+            if (!$reserva) {
+                session()->flash('error', 'Reserva no encontrada.');
+                return;
+            }
+
+            // Cargar TODOS los espacios de estacionamiento
+            $todosEspacios = DB::table('estacionamiento')->get();
+
+            // Filtrar espacios disponibles O el espacio actual de esta reserva
+            $this->espacios_disponibles = $todosEspacios->filter(function($espacio) use ($reserva) {
+                return $espacio->estado === 'disponible' ||
+                       $espacio->no_espacio == $reserva->estacionamiento_no_espacio;
+            })->values();
+
+            // Establecer el espacio actual
+            $this->espacio_seleccionado = $reserva->estacionamiento_no_espacio ?? '';
+
+            $this->mostrarModalEstacionamiento = true;
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error al cargar estacionamiento: ' . $e->getMessage());
+        }
+    }
+
+    public function guardarEstacionamiento()
+    {
+        try {
+            DB::beginTransaction();
+
+            $reserva = DB::table('reservas')
+                ->where('idreservas', $this->reserva_para_estacionamiento)
+                ->first();
+
+            if (!$reserva) {
+                throw new \Exception('Reserva no encontrada');
+            }
+
+            // Liberar espacio anterior si existía y es diferente al nuevo
+            if ($reserva->estacionamiento_no_espacio &&
+                $reserva->estacionamiento_no_espacio != $this->espacio_seleccionado) {
+                DB::table('estacionamiento')
+                    ->where('no_espacio', $reserva->estacionamiento_no_espacio)
+                    ->update(['estado' => 'disponible']);
+            }
+
+            // Asignar nuevo espacio si se seleccionó y es diferente al anterior
+            if ($this->espacio_seleccionado &&
+                $this->espacio_seleccionado != $reserva->estacionamiento_no_espacio) {
+                DB::table('estacionamiento')
+                    ->where('no_espacio', $this->espacio_seleccionado)
+                    ->update(['estado' => 'ocupado']);
+            }
+
+            // Si se deseleccionó el estacionamiento (valor vacío)
+            if (!$this->espacio_seleccionado && $reserva->estacionamiento_no_espacio) {
+                DB::table('estacionamiento')
+                    ->where('no_espacio', $reserva->estacionamiento_no_espacio)
+                    ->update(['estado' => 'disponible']);
+            }
+
+            // Actualizar reserva
+            DB::table('reservas')
+                ->where('idreservas', $this->reserva_para_estacionamiento)
+                ->update([
+                    'estacionamiento_no_espacio' => $this->espacio_seleccionado ?: null
+                ]);
+
+            DB::commit();
+
+            session()->flash('message', 'Estacionamiento actualizado exitosamente.');
+            $this->cerrarModalEstacionamiento();
+            $this->dispatch('reserva-actualizada');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Error al asignar estacionamiento: ' . $e->getMessage());
+        }
+    }
+
+    public function cerrarModalEstacionamiento()
+    {
+        $this->mostrarModalEstacionamiento = false;
+        $this->reserva_para_estacionamiento = null;
+        $this->espacio_seleccionado = '';
+        $this->espacios_disponibles = [];
+    }
+
     public function render()
     {
+        // Query principal con DISTINCT y agrupación para evitar duplicados
         $query = DB::table('reservas')
             ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
             ->leftJoin('plat_reserva', 'reservas.plat_reserva_idplat_reserva', '=', 'plat_reserva.idplat_reserva')
             ->leftJoin('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
             ->leftJoin('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
             ->select(
-                'reservas.*',
+                'reservas.idreservas',
+                'reservas.folio',
+                'reservas.fecha_reserva',
+                'reservas.fecha_check_in',
+                'reservas.fecha_check_out',
+                'reservas.no_personas',
+                'reservas.estado',
+                'reservas.estacionamiento_no_espacio',
                 'clientes.nom_completo',
                 'clientes.telefono',
                 'clientes.correo',
                 'plat_reserva.nombre_plataforma',
                 'plat_reserva.comision',
-                'habitaciones.precio',
-                'habitaciones.no_habitacion',
-                'habitaciones.tipo as tipo_habitacion'
+                DB::raw('MAX(habitaciones.precio) as precio'),
+                DB::raw('MAX(habitaciones.no_habitacion) as no_habitacion'),
+                DB::raw('MAX(habitaciones.tipo) as tipo_habitacion')
+            )
+            ->groupBy(
+                'reservas.idreservas',
+                'reservas.folio',
+                'reservas.fecha_reserva',
+                'reservas.fecha_check_in',
+                'reservas.fecha_check_out',
+                'reservas.no_personas',
+                'reservas.estado',
+                'reservas.estacionamiento_no_espacio',
+                'clientes.nom_completo',
+                'clientes.telefono',
+                'clientes.correo',
+                'plat_reserva.nombre_plataforma',
+                'plat_reserva.comision'
             );
 
-        // Filtro por búsqueda (nombre, folio o ID)
         if ($this->search) {
             $query->where(function($q) {
                 $q->where('clientes.nom_completo', 'like', '%' . $this->search . '%')
@@ -86,7 +211,6 @@ class Index extends Component
             });
         }
 
-        // Filtro por rango de fechas
         if ($this->fecha_inicio && $this->fecha_fin) {
             $query->whereBetween('reservas.fecha_check_in', [$this->fecha_inicio, $this->fecha_fin]);
         } elseif ($this->fecha_inicio) {
@@ -95,14 +219,12 @@ class Index extends Component
             $query->where('reservas.fecha_check_in', '<=', $this->fecha_fin);
         }
 
-        // Filtro por estado
         if ($this->estado_filtro) {
             $query->where('reservas.estado', $this->estado_filtro);
         }
 
         $reservas = $query->orderBy('reservas.idreservas', 'desc')->paginate(10);
 
-        // Calcular totales para cada reserva
         foreach ($reservas as $reserva) {
             $reserva->total_calculado = $this->calcularTotal($reserva);
         }
@@ -112,7 +234,6 @@ class Index extends Component
         ]);
     }
 
-    // Método para calcular el total
     private function calcularTotal($reserva)
     {
         $checkIn = Carbon::parse($reserva->fecha_check_in);
@@ -290,19 +411,10 @@ class Index extends Component
             $reserva = DB::table('reservas')->where('idreservas', $id)->first();
 
             if ($reserva) {
-                // Verificar que la fecha de checkout haya pasado o sea hoy
-                $fechaCheckout = Carbon::parse($reserva->fecha_check_out);
-                if ($fechaCheckout->isFuture()) {
-                    session()->flash('warning', 'No se puede liberar la reserva antes de la fecha de check-out.');
-                    return;
-                }
-
-                // Cambiar estado a completada
                 DB::table('reservas')
                     ->where('idreservas', $id)
                     ->update(['estado' => 'completada']);
 
-                // Liberar habitaciones
                 $habitacion = DB::table('habitaciones_has_reservas')
                     ->where('reservas_idreservas', $id)
                     ->first();
@@ -313,7 +425,6 @@ class Index extends Component
                         ->update(['estado' => 'disponible']);
                 }
 
-                // Liberar estacionamiento
                 if ($reserva->estacionamiento_no_espacio) {
                     DB::table('estacionamiento')
                         ->where('no_espacio', $reserva->estacionamiento_no_espacio)
@@ -321,7 +432,7 @@ class Index extends Component
                 }
 
                 DB::commit();
-                session()->flash('message', 'Reserva liberada exitosamente.');
+                session()->flash('message', 'Reserva liberada exitosamente. Estado: COMPLETADA');
                 $this->dispatch('reserva-actualizada');
             } else {
                 session()->flash('error', 'Reserva no encontrada.');

@@ -21,7 +21,7 @@ class CrearReserva extends Component
     public $correo = '';
 
     // Datos de la reserva
-    public $folio = ''; // Nuevo campo
+    public $folio = '';
     public $fecha_reserva;
     public $fecha_check_in = '';
     public $fecha_check_out = '';
@@ -31,7 +31,7 @@ class CrearReserva extends Component
     public $espacio_estacionamiento = '';
     public $plataforma_id = '';
 
-    // Método de pago - Nuevo
+    // Método de pago
     public $metodo_pago = '';
     public $monto_efectivo = 0;
     public $monto_tarjeta = 0;
@@ -49,20 +49,6 @@ class CrearReserva extends Component
     {
         $this->fecha_reserva = now()->format('Y-m-d');
         $this->cargarDatos();
-        $this->generarFolio();
-    }
-
-    public function generarFolio()
-    {
-        $fecha = now()->format('Ymd');
-        $ultimo = DB::table('reservas')
-            ->whereDate('fecha_reserva', now()->toDateString())
-            ->orderBy('idreservas', 'desc')
-            ->first();
-
-        $consecutivo = $ultimo ? (intval(substr($ultimo->folio ?? '0000', -4)) + 1) : 1;
-
-        $this->folio = 'RES-' . $fecha . '-' . str_pad($consecutivo, 4, '0', STR_PAD_LEFT);
     }
 
     public function cargarDatos()
@@ -107,11 +93,12 @@ class CrearReserva extends Component
             'direccion', 'edad', 'estado_origen', 'correo',
             'fecha_check_in', 'fecha_check_out', 'no_personas',
             'habitacion_id', 'necesita_estacionamiento', 'espacio_estacionamiento',
-            'plataforma_id', 'metodo_pago', 'monto_efectivo', 'monto_tarjeta', 'monto_transferencia'
+            'plataforma_id', 'metodo_pago', 'monto_efectivo', 'monto_tarjeta', 'monto_transferencia',
+            'folio'
         ]);
         $this->cliente_existente = false;
+        $this->pais_origen = 'México';
         $this->cargarDatos();
-        $this->generarFolio();
     }
 
     public function cerrar()
@@ -143,6 +130,7 @@ class CrearReserva extends Component
                 'nom_completo', 'tipo_identificacion', 'no_identificacion',
                 'direccion', 'edad', 'estado_origen', 'correo'
             ]);
+            $this->pais_origen = 'México';
         }
     }
 
@@ -150,6 +138,7 @@ class CrearReserva extends Component
     {
         // Validaciones
         $this->validate([
+            'folio' => 'required|string|max:50|unique:reservas,folio',
             'nom_completo' => 'required|min:3',
             'tipo_identificacion' => 'required',
             'no_identificacion' => 'required',
@@ -162,17 +151,17 @@ class CrearReserva extends Component
             'fecha_check_out' => 'required|date|after:fecha_check_in',
             'no_personas' => 'required|integer|min:1',
             'habitacion_id' => 'required|exists:habitaciones,idhabitacion',
-            'necesita_estacionamiento' => 'boolean',
-            'espacio_estacionamiento' => 'nullable|required_if:necesita_estacionamiento,1|exists:estacionamiento,no_espacio',
+            'espacio_estacionamiento' => 'nullable|exists:estacionamiento,no_espacio',
             'plataforma_id' => 'required|exists:plat_reserva,idplat_reserva',
             'metodo_pago' => 'required|in:efectivo,tarjeta,transferencia,combinado',
         ], [
+            'folio.required' => 'El folio es obligatorio',
+            'folio.unique' => 'Este folio ya existe',
             'nom_completo.required' => 'El nombre completo es obligatorio',
             'tipo_identificacion.required' => 'Seleccione un tipo de identificación',
             'fecha_check_in.after_or_equal' => 'La fecha de check-in no puede ser anterior a hoy',
             'fecha_check_out.after' => 'La fecha de check-out debe ser posterior al check-in',
             'edad.min' => 'El cliente debe ser mayor de edad',
-            'espacio_estacionamiento.required_if' => 'Debe seleccionar un espacio de estacionamiento',
             'metodo_pago.required' => 'Debe seleccionar un método de pago',
         ]);
 
@@ -198,12 +187,12 @@ class CrearReserva extends Component
                     'edad' => $this->edad,
                     'estado_origen' => $this->estado_origen,
                     'pais_origen' => $this->pais_origen,
-                    'telefono' => '0000000000', // Placeholder ya que ahora usamos folio
+                    'telefono' => '0000000000',
                     'correo' => $this->correo,
                 ]);
             }
 
-            // Crear reserva con folio y método de pago
+            // Crear reserva
             $reserva_id = DB::table('reservas')->insertGetId([
                 'folio' => $this->folio,
                 'fecha_reserva' => $this->fecha_reserva,
@@ -212,12 +201,8 @@ class CrearReserva extends Component
                 'no_personas' => $this->no_personas,
                 'estado' => 'confirmada',
                 'clientes_idclientes' => $this->cliente_id,
-                'estacionamiento_no_espacio' => $this->necesita_estacionamiento ? $this->espacio_estacionamiento : null,
+                'estacionamiento_no_espacio' => ($this->necesita_estacionamiento && $this->espacio_estacionamiento) ? $this->espacio_estacionamiento : null,
                 'plat_reserva_idplat_reserva' => $this->plataforma_id,
-                'metodo_pago' => $this->metodo_pago,
-                'monto_efectivo' => $this->metodo_pago === 'efectivo' || $this->metodo_pago === 'combinado' ? $this->monto_efectivo : null,
-                'monto_tarjeta' => $this->metodo_pago === 'tarjeta' || $this->metodo_pago === 'combinado' ? $this->monto_tarjeta : null,
-                'monto_transferencia' => $this->metodo_pago === 'transferencia' || $this->metodo_pago === 'combinado' ? $this->monto_transferencia : null,
             ]);
 
             // Relacionar habitación con reserva
