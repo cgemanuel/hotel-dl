@@ -23,6 +23,9 @@ Route::get('/habitaciones', function () {
     return view('livewire.habitaciones.index');
 })->name('habitaciones.index');
 
+// Ruta de Facturación
+Route::get('/facturacion', \App\Livewire\Facturacion\Index::class)->name('facturacion.index');
+
 
 
 Route::middleware(['auth'])->group(function () {
