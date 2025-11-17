@@ -13,8 +13,9 @@
               theme: {
                 extend: {
                   colors: {
-                    'hdl-maroon': '#8B0000',
+                    'hdl-maroon': '#1a4d2e', // 🟢 Verde oscuro (cambio aquí)
                     'hdl-cream': '#F5F1E6',
+                    'hdl-gold': '#f4d03f', // ✨ Dorado claro (nuevo color)
                   }
                 }
               }
@@ -30,8 +31,8 @@
     <body class="antialiased">
         <!-- Contenedor principal dividido en dos columnas (pantalla a la mitad) -->
         <div class="grid lg:grid-cols-2 h-screen">
-            <!-- Columna izquierda con fondo rojo vino y presentación del hotel -->
-            <div class="bg-hdl-maroon flex flex-col justify-center items-center p-12 text-white">
+            <!-- Columna izquierda con fondo verde oscuro y presentación del hotel -->
+            <div class="bg-hdl-maroon flex flex-col justify-center items-center p-12 text-hdl-gold">
                 <div class="max-w-md">
                      <img src="/images/hotel-exterior.jpg" alt="Piscina del Hotel Don Luis" class="w-full h-auto object-cover rounded-lg shadow-lg mb-8" />
                     <h2 class="text-2xl font-semibold text-center">
@@ -46,11 +47,11 @@
                 @if (Route::has('login'))
                     <nav class="flex justify-end gap-2">
                         @auth
-                            <a href="{{ url('/dashboard') }}" class="rounded-md px-4 py-2 bg-hdl-maroon text-white font-semibold hover:bg-opacity-90 transition">
+                            <a href="{{ url('/dashboard') }}" class="rounded-md px-4 py-2 bg-hdl-maroon text-hdl-gold font-semibold hover:bg-opacity-90 transition">
                                 Dashboard
                             </a>
                         @else
-                            <a href="{{ route('login') }}" class="rounded-md px-4 py-2 bg-hdl-maroon text-white font-semibold hover:bg-opacity-90 transition">
+                            <a href="{{ route('login') }}" class="rounded-md px-4 py-2 bg-hdl-maroon text-hdl-gold font-semibold hover:bg-opacity-90 transition">
                                 Login
                             </a>
                             @if (Route::has('register'))

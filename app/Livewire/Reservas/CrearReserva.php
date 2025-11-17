@@ -189,6 +189,8 @@ class CrearReserva extends Component
                     'pais_origen' => $this->pais_origen,
                     'telefono' => '0000000000',
                     'correo' => $this->correo,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 
@@ -203,18 +205,26 @@ class CrearReserva extends Component
                 'clientes_idclientes' => $this->cliente_id,
                 'estacionamiento_no_espacio' => ($this->necesita_estacionamiento && $this->espacio_estacionamiento) ? $this->espacio_estacionamiento : null,
                 'plat_reserva_idplat_reserva' => $this->plataforma_id,
+                'created_at' => now(),
+                'updated_at' => now(),
+
             ]);
 
             // Relacionar habitación con reserva
             DB::table('habitaciones_has_reservas')->insert([
                 'habitaciones_idhabitacion' => $this->habitacion_id,
                 'reservas_idreservas' => $reserva_id,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             // Actualizar estado de habitación
             DB::table('habitaciones')
                 ->where('idhabitacion', $this->habitacion_id)
-                ->update(['estado' => 'ocupada']);
+                ->update([
+                    'estado' => 'ocupada',
+                    'updated_at' => now(),
+                ]);
 
             // Actualizar estacionamiento si fue seleccionado
             if ($this->necesita_estacionamiento && $this->espacio_estacionamiento) {

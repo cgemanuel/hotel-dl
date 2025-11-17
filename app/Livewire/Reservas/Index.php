@@ -116,7 +116,10 @@ class Index extends Component
                 $reserva->estacionamiento_no_espacio != $this->espacio_seleccionado) {
                 DB::table('estacionamiento')
                     ->where('no_espacio', $reserva->estacionamiento_no_espacio)
-                    ->update(['estado' => 'disponible']);
+                    ->update([
+                        'estado' => 'disponible',
+                        'updated_at' => now()
+                    ]);
             }
 
             // Asignar nuevo espacio si se seleccionó y es diferente al anterior
@@ -124,21 +127,28 @@ class Index extends Component
                 $this->espacio_seleccionado != $reserva->estacionamiento_no_espacio) {
                 DB::table('estacionamiento')
                     ->where('no_espacio', $this->espacio_seleccionado)
-                    ->update(['estado' => 'ocupado']);
+                    ->update([
+                        'estado' => 'ocupado',
+                        'updated_at' => now()
+                    ]);
             }
 
             // Si se deseleccionó el estacionamiento (valor vacío)
             if (!$this->espacio_seleccionado && $reserva->estacionamiento_no_espacio) {
                 DB::table('estacionamiento')
                     ->where('no_espacio', $reserva->estacionamiento_no_espacio)
-                    ->update(['estado' => 'disponible']);
+                    ->update([
+                        'estado' => 'disponible',
+                        'updated_at' => now()
+                    ]);
             }
 
             // Actualizar reserva
             DB::table('reservas')
                 ->where('idreservas', $this->reserva_para_estacionamiento)
                 ->update([
-                    'estacionamiento_no_espacio' => $this->espacio_seleccionado ?: null
+                    'estacionamiento_no_espacio' => $this->espacio_seleccionado ?: null,
+                    'updated_at' => now()
                 ]);
 
             DB::commit();
@@ -258,7 +268,7 @@ class Index extends Component
     public function ver($id)
     {
         try {
-            $this->reservaSeleccionada = DB::table('reservas')
+            $reserva = DB::table('reservas')
                 ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
                 ->leftJoin('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
                 ->leftJoin('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
@@ -285,8 +295,23 @@ class Index extends Component
                 )
                 ->first();
 
-            if ($this->reservaSeleccionada) {
-                $this->reservaSeleccionada->total_calculado = $this->calcularTotal($this->reservaSeleccionada);
+            if ($reserva) {
+                // Calcular totales primero
+                $totales = $this->calcularTotal($reserva);
+
+                // Convertir TODO a array plano
+                $this->reservaSeleccionada = array_merge(
+                    (array) $reserva,
+                    [
+                        'total_dias' => $totales['dias'],
+                        'total_precio_noche' => $totales['precio_noche'],
+                        'total_subtotal' => $totales['subtotal'],
+                        'total_comision_porcentaje' => $totales['comision_porcentaje'],
+                        'total_monto_comision' => $totales['monto_comision'],
+                        'total_final' => $totales['total'],
+                    ]
+                );
+
                 $this->mostrarModalVer = true;
             } else {
                 session()->flash('error', 'Reserva no encontrada.');
@@ -319,6 +344,14 @@ class Index extends Component
                 $this->edit_no_personas = $this->reservaSeleccionada->no_personas;
                 $this->edit_estado = $this->reservaSeleccionada->estado;
                 $this->edit_estacionamiento_no_espacio = $this->reservaSeleccionada->estacionamiento_no_espacio;
+
+                // Cargar espacios disponibles
+                $todosEspacios = DB::table('estacionamiento')->get();
+                $this->espacios_disponibles = $todosEspacios->filter(function($espacio) {
+                    return $espacio->estado === 'disponible' ||
+                           $espacio->no_espacio == $this->reservaSeleccionada->estacionamiento_no_espacio;
+                })->values();
+
                 $this->mostrarModalEditar = true;
             } else {
                 session()->flash('error', 'Reserva no encontrada.');
@@ -345,6 +378,37 @@ class Index extends Component
         ]);
 
         try {
+            DB::beginTransaction();
+
+            // Obtener reserva actual
+            $reservaActual = DB::table('reservas')->where('idreservas', $this->editando_id)->first();
+
+            if (!$reservaActual) {
+                throw new \Exception('Reserva no encontrada');
+            }
+
+            // Manejo del estacionamiento
+            $estacionamientoAnterior = $reservaActual->estacionamiento_no_espacio;
+            $estacionamientoNuevo = $this->edit_estacionamiento_no_espacio ?: null;
+
+            // Si cambió el estacionamiento
+            if ($estacionamientoAnterior != $estacionamientoNuevo) {
+                // Liberar espacio anterior si existía
+                if ($estacionamientoAnterior) {
+                    DB::table('estacionamiento')
+                        ->where('no_espacio', $estacionamientoAnterior)
+                        ->update(['estado' => 'disponible']);
+                }
+
+                // Ocupar nuevo espacio si se seleccionó uno
+                if ($estacionamientoNuevo) {
+                    DB::table('estacionamiento')
+                        ->where('no_espacio', $estacionamientoNuevo)
+                        ->update(['estado' => 'ocupado']);
+                }
+            }
+
+            // Actualizar reserva
             DB::table('reservas')
                 ->where('idreservas', $this->editando_id)
                 ->update([
@@ -353,13 +417,17 @@ class Index extends Component
                     'fecha_check_out' => $this->edit_fecha_check_out,
                     'no_personas' => $this->edit_no_personas,
                     'estado' => $this->edit_estado,
-                    'estacionamiento_no_espacio' => $this->edit_estacionamiento_no_espacio,
+                    'estacionamiento_no_espacio' => $estacionamientoNuevo,
+                    'updated_at' => now()
                 ]);
+
+            DB::commit();
 
             session()->flash('message', 'Reserva actualizada exitosamente.');
             $this->cerrarModalEditar();
             $this->dispatch('reserva-actualizada');
         } catch (\Exception $e) {
+            DB::rollBack();
             session()->flash('error', 'Error al actualizar la reserva: ' . $e->getMessage());
         }
     }
@@ -374,7 +442,10 @@ class Index extends Component
             if ($reserva) {
                 DB::table('reservas')
                     ->where('idreservas', $id)
-                    ->update(['estado' => 'cancelada']);
+                    ->update([
+                        'estado' => 'cancelada',
+                        'updated_at' => now()
+                    ]);
 
                 $habitacion = DB::table('habitaciones_has_reservas')
                     ->where('reservas_idreservas', $id)
@@ -383,13 +454,19 @@ class Index extends Component
                 if ($habitacion) {
                     DB::table('habitaciones')
                         ->where('idhabitacion', $habitacion->habitaciones_idhabitacion)
-                        ->update(['estado' => 'disponible']);
+                        ->update([
+                            'estado' => 'disponible',
+                            'updated_at' => now()
+                        ]);
                 }
 
                 if ($reserva->estacionamiento_no_espacio) {
                     DB::table('estacionamiento')
                         ->where('no_espacio', $reserva->estacionamiento_no_espacio)
-                        ->update(['estado' => 'disponible']);
+                        ->update([
+                            'estado' => 'disponible',
+                            'updated_at' => now()
+                        ]);
                 }
 
                 DB::commit();
@@ -413,7 +490,10 @@ class Index extends Component
             if ($reserva) {
                 DB::table('reservas')
                     ->where('idreservas', $id)
-                    ->update(['estado' => 'completada']);
+                    ->update([
+                        'estado' => 'completada',
+                        'updated_at' => now()
+                    ]);
 
                 $habitacion = DB::table('habitaciones_has_reservas')
                     ->where('reservas_idreservas', $id)
@@ -422,13 +502,19 @@ class Index extends Component
                 if ($habitacion) {
                     DB::table('habitaciones')
                         ->where('idhabitacion', $habitacion->habitaciones_idhabitacion)
-                        ->update(['estado' => 'disponible']);
+                        ->update([
+                            'estado' => 'disponible',
+                            'updated_at' => now()
+                        ]);
                 }
 
                 if ($reserva->estacionamiento_no_espacio) {
                     DB::table('estacionamiento')
                         ->where('no_espacio', $reserva->estacionamiento_no_espacio)
-                        ->update(['estado' => 'disponible']);
+                        ->update([
+                            'estado' => 'disponible',
+                            'updated_at' => now()
+                        ]);
                 }
 
                 DB::commit();

@@ -58,7 +58,10 @@ class CroquisEstacionamiento extends Component
         try {
             DB::table('estacionamiento')
                 ->where('no_espacio', $numero)
-                ->update(['estado' => $nuevoEstado]);
+                ->update([
+                    'estado' => $nuevoEstado,
+                    'updated_at' => now()
+                ]);
 
             session()->flash('message', 'Estado del espacio de estacionamiento actualizado exitosamente.');
 
