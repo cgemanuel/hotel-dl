@@ -230,20 +230,20 @@
 
     {{-- Modal de Estacionamiento --}}
     @if($mostrarModalEstacionamiento)
-    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-estacionamiento" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 z-[9999] overflow-y-auto" aria-labelledby="modal-estacionamiento" role="dialog" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
 
             {{-- Overlay oscuro --}}
             <div class="fixed inset-0 bg-gray-900 bg-opacity-75 dark:bg-black dark:bg-opacity-90 transition-opacity"
-                 aria-hidden="true"
-                 wire:click="cerrarModalEstacionamiento"></div>
+                aria-hidden="true"
+                wire:click="cerrarModalEstacionamiento"></div>
 
             {{-- Espaciador para centrar --}}
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             {{-- Contenedor del modal --}}
-            <div class="inline-block align-bottom bg-white dark:bg-zinc-900 rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-50"
-                 wire:click.stop>
+            <div class="inline-block align-bottom bg-white dark:bg-zinc-900 rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative"
+                wire:click.stop>
 
                 {{-- Header --}}
                 <div class="bg-white dark:bg-zinc-900 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-zinc-700">
@@ -268,7 +268,6 @@
                     </label>
 
                     <select wire:model="espacio_seleccionado"
-                            size="5"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         <option value="">Sin estacionamiento</option>
                         @forelse($espacios_disponibles as $espacio)
@@ -297,8 +296,10 @@
                 <div class="bg-gray-50 dark:bg-zinc-800 px-6 py-4 flex flex-row-reverse gap-3">
                     <button type="button"
                             wire:click="guardarEstacionamiento"
-                            class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-colors">
-                        Guardar
+                            wire:loading.attr="disabled"
+                            class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span wire:loading.remove wire:target="guardarEstacionamiento">Guardar</span>
+                        <span wire:loading wire:target="guardarEstacionamiento">Guardando...</span>
                     </button>
                     <button type="button"
                             wire:click="cerrarModalEstacionamiento"

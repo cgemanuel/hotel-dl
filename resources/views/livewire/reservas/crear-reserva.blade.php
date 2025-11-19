@@ -3,6 +3,7 @@
     <!-- Modal con z-index específico -->
     <div class="modal-overlay fixed inset-0 overflow-y-auto" style="z-index: 9998;" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+
             <!-- Overlay oscuro -->
             <div class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75 dark:bg-black dark:bg-opacity-90"
                  wire:click="cerrar" style="z-index: 9998;"></div>
@@ -10,36 +11,36 @@
             <!-- Contenedor del modal -->
             <div class="modal-container inline-block w-full max-w-4xl overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-zinc-900 rounded-lg shadow-2xl sm:my-8 sm:align-middle relative" style="z-index: 9999;">
 
-                <!-- Header fijo -->
-                <div class="sticky top-0 z-10 px-6 py-4 border-b border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-                            Nueva Reserva
-                        </h3>
-                        <button wire:click="cerrar"
-                                type="button"
-                                class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none transition-colors">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Body con scroll -->
-                <div class="px-6 py-4 max-h-[calc(100vh-200px)] overflow-y-auto bg-white dark:bg-zinc-900">
-                    <!-- Mostrar errores -->
-                    @if ($errors->any())
-                        <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                            <ul class="list-disc list-inside text-sm text-red-600 dark:text-red-400">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
+                <form wire:submit.prevent="guardar">
+                    <!-- Header fijo -->
+                    <div class="sticky top-0 z-10 px-6 py-4 border-b border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                                Nueva Reserva
+                            </h3>
+                            <button wire:click="cerrar"
+                                    type="button"
+                                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
-                    @endif
+                    </div>
 
-                    <form wire:submit.prevent="guardar">
+                    <!-- Body con scroll -->
+                    <div class="px-6 py-4 max-h-[calc(100vh-200px)] overflow-y-auto bg-white dark:bg-zinc-900">
+
+                        <!-- Mostrar errores -->
+                        @if ($errors->any())
+                            <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                <ul class="list-disc list-inside text-sm text-red-600 dark:text-red-400">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
 
                         <!-- Sección: Cliente -->
                         <div class="mb-6">
@@ -176,6 +177,7 @@
                             <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4 border-b-2 border-green-600 dark:border-green-500 pb-2">Detalles de la Reserva</h4>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
                                 <!-- Folio Manual -->
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -276,26 +278,34 @@
                                 </div>
                             </div>
                         </div>
-                    </form>
-                </div>
-
-
-
-                <!-- Footer fijo -->
-                <div class="sticky bottom-0 px-6 py-4 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-700">
-                    <div class="flex justify-end gap-3">
-                        <button type="button"
-                                wire:click="cerrar"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                            Cancelar
-                        </button>
-                        <button type="button"
-                                wire:click="guardar"
-                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                            Guardar Reserva
-                        </button>
                     </div>
-                </div>
+
+                    <!-- Footer fijo DENTRO DEL FORM -->
+                    <div class="sticky bottom-0 px-6 py-4 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-700">
+                        <div class="flex justify-end gap-3">
+                            <button type="button"
+                                    wire:click="cerrar"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                                Cancelar
+                            </button>
+
+                            <!-- BOTÓN SUBMIT -->
+                            <button type="submit"
+                                    wire:loading.attr="disabled"
+                                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+
+                                <!-- Spinner animado -->
+                                <svg wire:loading wire:target="guardar" class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+
+                                <span wire:loading.remove wire:target="guardar">Guardar Reserva</span>
+                                <span wire:loading wire:target="guardar">Guardando...</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
 
             </div>
         </div>

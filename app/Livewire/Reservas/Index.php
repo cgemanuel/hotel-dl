@@ -116,10 +116,14 @@ class Index extends Component
                 $reserva->estacionamiento_no_espacio != $this->espacio_seleccionado) {
                 DB::table('estacionamiento')
                     ->where('no_espacio', $reserva->estacionamiento_no_espacio)
-                    ->update([
-                        'estado' => 'disponible',
-                        'updated_at' => now()
-                    ]);
+                    ->update(['estado' => 'disponible']);
+            }
+
+            // Si se deseleccionó el estacionamiento (valor vacío)
+            if (!$this->espacio_seleccionado && $reserva->estacionamiento_no_espacio) {
+                DB::table('estacionamiento')
+                    ->where('no_espacio', $reserva->estacionamiento_no_espacio)
+                    ->update(['estado' => 'disponible']);
             }
 
             // Asignar nuevo espacio si se seleccionó y es diferente al anterior
@@ -127,20 +131,7 @@ class Index extends Component
                 $this->espacio_seleccionado != $reserva->estacionamiento_no_espacio) {
                 DB::table('estacionamiento')
                     ->where('no_espacio', $this->espacio_seleccionado)
-                    ->update([
-                        'estado' => 'ocupado',
-                        'updated_at' => now()
-                    ]);
-            }
-
-            // Si se deseleccionó el estacionamiento (valor vacío)
-            if (!$this->espacio_seleccionado && $reserva->estacionamiento_no_espacio) {
-                DB::table('estacionamiento')
-                    ->where('no_espacio', $reserva->estacionamiento_no_espacio)
-                    ->update([
-                        'estado' => 'disponible',
-                        'updated_at' => now()
-                    ]);
+                    ->update(['estado' => 'ocupado']);
             }
 
             // Actualizar reserva

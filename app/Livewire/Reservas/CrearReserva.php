@@ -189,12 +189,10 @@ class CrearReserva extends Component
                     'pais_origen' => $this->pais_origen,
                     'telefono' => '0000000000',
                     'correo' => $this->correo,
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
             }
 
-            // Crear reserva
+            // ✅ CREAR RESERVA (sin campos de habitación aquí)
             $reserva_id = DB::table('reservas')->insertGetId([
                 'folio' => $this->folio,
                 'fecha_reserva' => $this->fecha_reserva,
@@ -202,31 +200,31 @@ class CrearReserva extends Component
                 'fecha_check_out' => $this->fecha_check_out,
                 'no_personas' => $this->no_personas,
                 'estado' => 'confirmada',
+                'metodo_pago' => $this->metodo_pago,
+                'monto_efectivo' => $this->monto_efectivo ?? 0,
+                'monto_tarjeta' => $this->monto_tarjeta ?? 0,
+                'monto_transferencia' => $this->monto_transferencia ?? 0,
                 'clientes_idclientes' => $this->cliente_id,
                 'estacionamiento_no_espacio' => ($this->necesita_estacionamiento && $this->espacio_estacionamiento) ? $this->espacio_estacionamiento : null,
                 'plat_reserva_idplat_reserva' => $this->plataforma_id,
                 'created_at' => now(),
                 'updated_at' => now(),
-
             ]);
 
-            // Relacionar habitación con reserva
+            // ✅ RELACIONAR HABITACIÓN con RESERVA en tabla intermedia
             DB::table('habitaciones_has_reservas')->insert([
                 'habitaciones_idhabitacion' => $this->habitacion_id,
                 'reservas_idreservas' => $reserva_id,
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
-            // Actualizar estado de habitación
+            // ✅ ACTUALIZAR ESTADO DE LA HABITACIÓN
             DB::table('habitaciones')
                 ->where('idhabitacion', $this->habitacion_id)
                 ->update([
                     'estado' => 'ocupada',
-                    'updated_at' => now(),
                 ]);
 
-            // Actualizar estacionamiento si fue seleccionado
+            // ✅ ACTUALIZAR ESTACIONAMIENTO si fue seleccionado
             if ($this->necesita_estacionamiento && $this->espacio_estacionamiento) {
                 DB::table('estacionamiento')
                     ->where('no_espacio', $this->espacio_estacionamiento)
