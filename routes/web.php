@@ -26,7 +26,10 @@ Route::get('/habitaciones', function () {
 // Ruta de Facturación
 Route::get('/facturacion', \App\Livewire\Facturacion\Index::class)->name('facturacion.index');
 
-
+// Ruta de Servicios Adicionales
+Route::get('/servicios-adicionales', \App\Livewire\ServiciosAdicionales\Index::class)
+    ->middleware(['auth'])
+    ->name('servicios-adicionales.index');
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');

@@ -20,7 +20,7 @@
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <!-- Tu código del sidebar sin cambios -->
+
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
             <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
@@ -38,6 +38,15 @@
                     <flux:navlist.item icon="square-3-stack-3d" :href="route('estacionamiento.index')" :current="request()->routeIs('estacionamiento.*')" wire:navigate>{{ __('Estacionamiento') }}</flux:navlist.item>
 
                     <flux:navlist.item icon="document-text" :href="route('facturacion.index')" :current="request()->routeIs('facturacion.*')" wire:navigate>{{ __('Facturación') }}</flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        :href="route('servicios-adicionales.index')"
+                        :current="request()->routeIs('servicios-adicionales.*')"
+                        wire:navigate>
+                        {{ __('Servicios Adicionales') }}
+                    </flux:navlist.item>
+
                 </flux:navlist.group>
             </flux:navlist>
 

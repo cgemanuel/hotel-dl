@@ -447,7 +447,6 @@ class Index extends Component
                         ->where('idhabitacion', $habitacion->habitaciones_idhabitacion)
                         ->update([
                             'estado' => 'disponible',
-                            'updated_at' => now()
                         ]);
                 }
 
@@ -456,7 +455,6 @@ class Index extends Component
                         ->where('no_espacio', $reserva->estacionamiento_no_espacio)
                         ->update([
                             'estado' => 'disponible',
-                            'updated_at' => now()
                         ]);
                 }
 
@@ -495,7 +493,6 @@ class Index extends Component
                         ->where('idhabitacion', $habitacion->habitaciones_idhabitacion)
                         ->update([
                             'estado' => 'disponible',
-                            'updated_at' => now()
                         ]);
                 }
 
@@ -504,7 +501,6 @@ class Index extends Component
                         ->where('no_espacio', $reserva->estacionamiento_no_espacio)
                         ->update([
                             'estado' => 'disponible',
-                            'updated_at' => now()
                         ]);
                 }
 

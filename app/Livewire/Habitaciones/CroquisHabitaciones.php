@@ -169,7 +169,6 @@ class CroquisHabitaciones extends Component
                 ->where('idhabitacion', $habitacionId)
                 ->update([
                     'estado' => $nuevoEstado,
-                    'updated_at' => now()
                 ]);
 
             session()->flash('message', 'Estado de la habitación actualizado exitosamente.');
