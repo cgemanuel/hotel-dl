@@ -12,28 +12,27 @@ Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-// Ruta de Reservas
-Route::get('/reservas', \App\Livewire\Reservas\Index::class)->name('reservas.index');
+// ✅ RUTAS PARA RECEPCIONISTAS Y GERENTES
+Route::middleware(['auth', 'role:recepcionista,gerente'])->group(function () {
+    Route::get('/reservas', \App\Livewire\Reservas\Index::class)->name('reservas.index');
+    Route::get('/estacionamiento', function () {
+        return view('livewire.estacionamiento.index');
+    })->name('estacionamiento.index');
+    Route::get('/habitaciones', function () {
+        return view('livewire.habitaciones.index');
+    })->name('habitaciones.index');
+    Route::get('/facturacion', \App\Livewire\Facturacion\Index::class)->name('facturacion.index');
+    Route::get('/servicios-adicionales', \App\Livewire\ServiciosAdicionales\Index::class)->name('servicios-adicionales.index');
+});
 
-Route::get('/estacionamiento', function () {
-    return view('livewire.estacionamiento.index');
-})->name('estacionamiento.index');
-
-Route::get('/habitaciones', function () {
-    return view('livewire.habitaciones.index');
-})->name('habitaciones.index');
-
-// Ruta de Facturación
-Route::get('/facturacion', \App\Livewire\Facturacion\Index::class)->name('facturacion.index');
-
-// Ruta de Servicios Adicionales
-Route::get('/servicios-adicionales', \App\Livewire\ServiciosAdicionales\Index::class)
-    ->middleware(['auth'])
-    ->name('servicios-adicionales.index');
+// ✅ RUTAS EXCLUSIVAS PARA GERENTES
+Route::middleware(['auth', 'role:gerente'])->group(function () {
+    Route::get('/gerente/habitaciones', \App\Livewire\Gerente\GestionHabitaciones::class)->name('gerente.habitaciones');
+    Route::get('/gerente/estacionamiento', \App\Livewire\Gerente\GestionEstacionamiento::class)->name('gerente.estacionamiento');
+});
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
-
     Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
     Volt::route('settings/password', 'settings.password')->name('password.edit');
     Volt::route('settings/appearance', 'settings.appearance')->name('appearance.edit');

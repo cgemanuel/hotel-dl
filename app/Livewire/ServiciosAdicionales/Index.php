@@ -13,8 +13,14 @@ class Index extends Component
 
     public $search = '';
     public $estado_filtro = '';
-    public $editando_servicio = null;
-    public $servicio_texto = '';
+
+    // Para mostrar modal de servicios
+    public $mostrarModalServicios = false;
+    public $reserva_seleccionada = null;
+    public $servicios_reserva = [];
+
+    // Para agregar nuevo servicio
+    public $nuevo_servicio = '';
 
     protected $queryString = ['search', 'estado_filtro'];
 
@@ -34,73 +40,86 @@ class Index extends Component
         $this->resetPage();
     }
 
-    public function editarServicio($reservaId, $servicioActual)
+    /**
+     * Abrir modal para ver/agregar servicios
+     */
+    public function abrirModalServicios($reservaId)
     {
-        $this->editando_servicio = $reservaId;
-        $this->servicio_texto = $servicioActual ?? '';
+        $this->reserva_seleccionada = $reservaId;
+        $this->cargarServiciosReserva();
+        $this->mostrarModalServicios = true;
     }
 
-    public function guardarServicio($reservaId)
+    /**
+     * Cargar servicios existentes de la reserva
+     */
+    public function cargarServiciosReserva()
+    {
+        $this->servicios_reserva = DB::table('servicios_adicionales')
+            ->where('reservas_idreservas', $this->reserva_seleccionada)
+            ->orderBy('fecha_registro', 'desc')
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Agregar nuevo servicio
+     */
+    public function agregarServicio()
     {
         $this->validate([
-            'servicio_texto' => 'nullable|string|max:2000', // Límite de 2000 caracteres
+            'nuevo_servicio' => 'required|string|max:500',
         ], [
-            'servicio_texto.max' => 'La descripción no puede exceder 2000 caracteres.'
+            'nuevo_servicio.required' => 'Debes ingresar la descripción del servicio',
+            'nuevo_servicio.max' => 'La descripción no puede exceder 500 caracteres',
         ]);
 
         try {
-            DB::beginTransaction();
+            DB::table('servicios_adicionales')->insert([
+                'reservas_idreservas' => $this->reserva_seleccionada,
+                'descripcion' => trim($this->nuevo_servicio),
+                'fecha_registro' => now(),
+                'usuario_registro' => Auth::user()->name ?? 'Sistema',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-            // Verificar si ya existe un registro de servicios para esta reserva
-            $servicioExistente = DB::table('servicios_adicionales')
-                ->where('reservas_idreservas', $reservaId)
-                ->first();
+            session()->flash('message', 'Servicio agregado exitosamente.');
 
-            if ($servicioExistente) {
-                // Actualizar servicio existente
-                if (empty(trim($this->servicio_texto))) {
-                    // Si el texto está vacío, eliminar el registro
-                    DB::table('servicios_adicionales')
-                        ->where('id_servicio', $servicioExistente->id_servicio)
-                        ->delete();
-                } else {
-                    // Actualizar el registro
-                    DB::table('servicios_adicionales')
-                        ->where('id_servicio', $servicioExistente->id_servicio)
-                        ->update([
-                            'descripcion' => trim($this->servicio_texto),
-                            'fecha_registro' => now(),
-                            'usuario_registro' => Auth::user()->name ?? 'Sistema',
-                        ]);
-                }
-            } else {
-                // Crear nuevo registro solo si hay texto
-                if (!empty(trim($this->servicio_texto))) {
-                    DB::table('servicios_adicionales')->insert([
-                        'reservas_idreservas' => $reservaId,
-                        'descripcion' => trim($this->servicio_texto),
-                        'fecha_registro' => now(),
-                        'usuario_registro' => Auth::user()->name ?? 'Sistema',
-                    ]);
-                }
-            }
+            // Limpiar y recargar
+            $this->reset('nuevo_servicio');
+            $this->cargarServiciosReserva();
 
-            DB::commit();
-
-            session()->flash('message', 'Servicios adicionales actualizados exitosamente.');
-
-            $this->editando_servicio = null;
-            $this->servicio_texto = '';
         } catch (\Exception $e) {
-            DB::rollBack();
-            session()->flash('error', 'Error al guardar: ' . $e->getMessage());
+            session()->flash('error', 'Error al agregar servicio: ' . $e->getMessage());
         }
     }
 
-    public function cancelarEdicion()
+    /**
+     * Eliminar servicio
+     */
+    public function eliminarServicio($servicioId)
     {
-        $this->editando_servicio = null;
-        $this->servicio_texto = '';
+        try {
+            DB::table('servicios_adicionales')
+                ->where('id', $servicioId)
+                ->delete();
+
+            session()->flash('message', 'Servicio eliminado.');
+            $this->cargarServiciosReserva();
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Cerrar modal
+     */
+    public function cerrarModal()
+    {
+        $this->mostrarModalServicios = false;
+        $this->reset(['reserva_seleccionada', 'servicios_reserva', 'nuevo_servicio']);
     }
 
     public function render()
@@ -109,7 +128,6 @@ class Index extends Component
             ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
             ->leftJoin('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
             ->leftJoin('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
-            ->leftJoin('servicios_adicionales', 'reservas.idreservas', '=', 'servicios_adicionales.reservas_idreservas')
             ->select(
                 'reservas.idreservas',
                 'reservas.folio',
@@ -119,7 +137,7 @@ class Index extends Component
                 'clientes.nom_completo',
                 'clientes.correo',
                 DB::raw('MAX(habitaciones.no_habitacion) as no_habitacion'),
-                DB::raw('MAX(servicios_adicionales.descripcion) as servicios_adicionales')
+                DB::raw('(SELECT COUNT(*) FROM servicios_adicionales WHERE servicios_adicionales.reservas_idreservas = reservas.idreservas) as total_servicios')
             )
             ->groupBy(
                 'reservas.idreservas',

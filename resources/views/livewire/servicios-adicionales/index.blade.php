@@ -21,7 +21,6 @@
         </div>
     @endif
 
-    <!-- Filtros -->
     <div class="mb-6 bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border-2 border-green-200 dark:border-green-800">
         <h3 class="text-lg font-semibold text-green-900 dark:text-green-100 mb-4">
             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +42,7 @@
             <div>
                 <label class="block text-sm font-medium text-green-800 dark:text-green-200 mb-1">Estado</label>
                 <select wire:model.live="estado_filtro"
-                         class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
+                           class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
                     <option value="">Todos</option>
                     <option value="confirmada">Confirmada</option>
                     <option value="completada">Completada</option>
@@ -59,7 +58,6 @@
         </div>
     </div>
 
-    <!-- Tabla de Servicios Adicionales -->
     <div class="overflow-x-auto bg-white dark:bg-zinc-900 rounded-lg border-2 border-green-200 dark:border-green-800 shadow-lg">
         <table class="min-w-full divide-y divide-green-200 dark:divide-green-800">
             <thead class="bg-green-800 dark:bg-green-900">
@@ -70,28 +68,26 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Check-in</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Check-out</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Estado</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-96">Servicios Adicionales</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Servicios</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
                 </tr>
             </thead>
 
             <tbody class="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-700">
                 @forelse($reservas as $reserva)
                 <tr class="hover:bg-green-50 dark:hover:bg-green-900/10 transition-colors">
-                    <!-- Folio -->
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="text-sm font-bold text-amber-700 dark:text-amber-400">
                             {{ $reserva->folio ?? 'N/A' }}
                         </span>
                     </td>
 
-                    <!-- Habitación -->
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                             Hab. {{ $reserva->no_habitacion ?? 'N/A' }}
                         </span>
                     </td>
 
-                    <!-- Cliente -->
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex flex-col">
                             <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">
@@ -103,17 +99,14 @@
                         </div>
                     </td>
 
-                    <!-- Check-in -->
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">
                         {{ \Carbon\Carbon::parse($reserva->fecha_check_in)->format('d/m/Y') }}
                     </td>
 
-                    <!-- Check-out -->
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">
                         {{ \Carbon\Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
                     </td>
 
-                    <!-- Estado -->
                     <td class="px-6 py-4 whitespace-nowrap">
                         @php
                             $estadoClasses = match($reserva->estado) {
@@ -127,54 +120,26 @@
                         </span>
                     </td>
 
-                    <!-- Servicios Adicionales (editable) -->
-                    <td class="px-6 py-4 w-96">
-                        @if($editando_servicio === $reserva->idreservas)
-                            <div class="flex flex-col gap-2">
-                                <textarea
-                                    wire:model="servicio_texto"
-                                    rows="4"
-                                    maxlength="2000"
-                                    placeholder="Ej: Servicio de lavandería, Room service, Toallas extra..."
-                                    class="w-full px-3 py-2 text-sm border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 resize-none"
-                                ></textarea>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">
-                                    {{ strlen($servicio_texto ?? '') }}/2000 caracteres
-                                </div>
-                                <div class="flex gap-2">
-                                    <button
-                                        wire:click="guardarServicio({{ $reserva->idreservas }})"
-                                        class="flex-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors"
-                                    >
-                                        ✓ Guardar
-                                    </button>
-                                    <button
-                                        wire:click="cancelarEdicion"
-                                        class="flex-1 px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-xs font-medium transition-colors"
-                                    >
-                                        ✕ Cancelar
-                                    </button>
-                                </div>
-                            </div>
-                        @else
-                            <button
-                                wire:click="editarServicio({{ $reserva->idreservas }}, '{{ addslashes($reserva->servicios_adicionales ?? '') }}')"
-                                class="text-sm text-left text-zinc-900 dark:text-zinc-100 hover:text-green-600 dark:hover:text-green-400 transition-colors w-full"
-                            >
-                                @if($reserva->servicios_adicionales)
-                                    <div class="max-h-20 overflow-y-auto text-sm whitespace-pre-wrap">
-                                        {{ $reserva->servicios_adicionales }}
-                                    </div>
-                                @else
-                                    <span class="text-gray-400 italic">Sin servicios registrados - Clic para agregar</span>
-                                @endif
-                            </button>
-                        @endif
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            {{ $reserva->total_servicios }} servicio{{ $reserva->total_servicios != 1 ? 's' : '' }}
+                        </span>
+                    </td>
+
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <button
+                            wire:click="abrirModalServicios({{ $reserva->idreservas }})"
+                            class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            Gestionar
+                        </button>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
+                    <td colspan="8" class="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
                         <svg class="mx-auto h-12 w-12 text-zinc-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
@@ -186,9 +151,66 @@
         </table>
     </div>
 
-    <!-- Paginación -->
     <div class="mt-6">
         {{ $reservas->links() }}
     </div>
+
+    @if($mostrarModalServicios)
+    <div class="fixed inset-0 z-50 overflow-y-auto" wire:key="modal-servicios" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4">
+
+            <div class="fixed inset-0 bg-gray-900 bg-opacity-75" wire:click="cerrarModal"></div>
+
+            <div wire:ignore.self class="inline-block bg-white dark:bg-zinc-900 rounded-lg shadow-xl sm:max-w-2xl w-full relative z-50">
+
+                <div class="bg-green-700 px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        Servicios Adicionales
+                    </h3>
+                    <button wire:click="cerrarModal" class="text-white hover:text-gray-200">
+                        ✖
+                    </button>
+                </div>
+
+                <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
+
+                    <div class="mb-6 bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border">
+                        <h4 class="font-semibold mb-2">Agregar Nuevo Servicio</h4>
+
+                        <textarea wire:model.live="nuevo_servicio" rows="2"
+                            class="w-full border rounded p-2"></textarea>
+
+                        @error('nuevo_servicio')
+                            <p class="text-red-500 text-xs">{{ $message }}</p>
+                        @enderror
+
+                        <small class="text-gray-500">
+                            {{ mb_strlen($nuevo_servicio ?? '') }}/500 caracteres
+                        </small>
+
+                        <button wire:click="agregarServicio" class="mt-3 bg-green-600 text-white px-4 py-2 rounded">
+                            Guardar
+                        </button>
+                    </div>
+
+                    @foreach($servicios_reserva as $servicio)
+                    <div wire:key="servicio-{{ $servicio->id }}"
+                        class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border mb-2">
+                        <p>{{ $servicio->descripcion }}</p>
+                    </div>
+                    @endforeach
+                </div>
+
+                <div class="bg-gray-100 dark:bg-gray-800 px-6 py-4">
+                    <button wire:click="cerrarModal"
+                        class="w-full bg-gray-600 text-white py-2 rounded">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
 
 </div>

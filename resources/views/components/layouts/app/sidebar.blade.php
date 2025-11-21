@@ -29,25 +29,43 @@
 
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
-
-                    <flux:navlist.item icon="calendar" :href="route('reservas.index')" :current="request()->routeIs('reservas.*')" wire:navigate>{{ __('Reservas') }}</flux:navlist.item>
-
-                    <flux:navlist.item icon="home" :href="route('habitaciones.index')" :current="request()->routeIs('habitaciones.*')" wire:navigate>{{ __('Habitaciones') }}</flux:navlist.item>
-
-                    <flux:navlist.item icon="square-3-stack-3d" :href="route('estacionamiento.index')" :current="request()->routeIs('estacionamiento.*')" wire:navigate>{{ __('Estacionamiento') }}</flux:navlist.item>
-
-                    <flux:navlist.item icon="document-text" :href="route('facturacion.index')" :current="request()->routeIs('facturacion.*')" wire:navigate>{{ __('Facturación') }}</flux:navlist.item>
-
-                    <flux:navlist.item
-                        icon="clipboard-document-list"
-                        :href="route('servicios-adicionales.index')"
-                        :current="request()->routeIs('servicios-adicionales.*')"
-                        wire:navigate>
-                        {{ __('Servicios Adicionales') }}
+                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                        {{ __('Dashboard') }}
                     </flux:navlist.item>
 
+                    <flux:navlist.item icon="calendar" :href="route('reservas.index')" :current="request()->routeIs('reservas.*')" wire:navigate>
+                        {{ __('Reservas') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item icon="home" :href="route('habitaciones.index')" :current="request()->routeIs('habitaciones.*')" wire:navigate>
+                        {{ __('Habitaciones') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item icon="square-3-stack-3d" :href="route('estacionamiento.index')" :current="request()->routeIs('estacionamiento.*')" wire:navigate>
+                        {{ __('Estacionamiento') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item icon="document-text" :href="route('facturacion.index')" :current="request()->routeIs('facturacion.*')" wire:navigate>
+                        {{ __('Facturación') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item icon="clipboard-document-list" :href="route('servicios-adicionales.index')" :current="request()->routeIs('servicios-adicionales.*')" wire:navigate>
+                        {{ __('Servicios Adicionales') }}
+                    </flux:navlist.item>
                 </flux:navlist.group>
+
+                {{-- ✅ SOLO VISIBLE PARA GERENTES --}}
+                @if(auth()->user()->rol === 'gerente')
+                <flux:navlist.group :heading="__('Gerencia')" class="grid border-t border-zinc-200 dark:border-zinc-700 pt-4 mt-4">
+                    <flux:navlist.item icon="cog" :href="route('gerente.habitaciones')" :current="request()->routeIs('gerente.habitaciones')" wire:navigate>
+                        {{ __('Gestión Habitaciones') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item icon="square-3-stack-3d" :href="route('gerente.estacionamiento')" :current="request()->routeIs('gerente.estacionamiento')" wire:navigate>
+                        {{ __('Gestión Estacionamiento') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
+                @endif
             </flux:navlist>
 
             <flux:spacer />

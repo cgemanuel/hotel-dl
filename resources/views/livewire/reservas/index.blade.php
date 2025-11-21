@@ -204,6 +204,13 @@
                                 Liberar
                             </button>
                             @endif
+                            @if(auth()->user()->rol === 'gerente')
+                            <button wire:click="eliminarPermanente({{ $reserva->idreservas }})"
+                                wire:confirm="⚠️ ADVERTENCIA: Esto eliminará la reserva PERMANENTEMENTE de la base de datos. ¿Continuar?"
+                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">
+                            Eliminar (Permanente)
+                            </button>
+                            @endif
                         </div>
                     </td>
                 </tr>

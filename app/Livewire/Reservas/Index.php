@@ -515,4 +515,55 @@ class Index extends Component
             session()->flash('error', 'Error al liberar la reserva: ' . $e->getMessage());
         }
     }
+
+        public function eliminarPermanente($id)
+    {
+        // Solo gerentes pueden eliminar permanentemente
+        if (auth()->user()->rol !== 'gerente') {
+            session()->flash('error', 'No tienes permisos para eliminar reservas.');
+            return;
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $reserva = DB::table('reservas')->where('idreservas', $id)->first();
+
+            if ($reserva) {
+                // Liberar habitación
+                $habitacion = DB::table('habitaciones_has_reservas')
+                    ->where('reservas_idreservas', $id)
+                    ->first();
+
+                if ($habitacion) {
+                    DB::table('habitaciones')
+                        ->where('idhabitacion', $habitacion->habitaciones_idhabitacion)
+                        ->update(['estado' => 'disponible']);
+                }
+
+                // Liberar estacionamiento
+                if ($reserva->estacionamiento_no_espacio) {
+                    DB::table('estacionamiento')
+                        ->where('no_espacio', $reserva->estacionamiento_no_espacio)
+                        ->update(['estado' => 'disponible']);
+                }
+
+                // Eliminar relación habitación-reserva
+                DB::table('habitaciones_has_reservas')
+                    ->where('reservas_idreservas', $id)
+                    ->delete();
+
+                // Eliminar reserva
+                DB::table('reservas')->where('idreservas', $id)->delete();
+
+                DB::commit();
+                session()->flash('message', 'Reserva eliminada permanentemente.');
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Error al eliminar: ' . $e->getMessage());
+        }
+    }
+
+
 }
