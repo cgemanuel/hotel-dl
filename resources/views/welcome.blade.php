@@ -13,9 +13,9 @@
               theme: {
                 extend: {
                   colors: {
-                    'hdl-maroon': '#1a4d2e', // 🟢 Verde oscuro (cambio aquí)
+                    'hdl-maroon': '#1a4d2e', // 🟢 Verde oscuro
                     'hdl-cream': '#F5F1E6',
-                    'hdl-gold': '#f4d03f', // ✨ Dorado claro (nuevo color)
+                    'hdl-gold': '#f4d03f', // ✨ Dorado claro
                   }
                 }
               }

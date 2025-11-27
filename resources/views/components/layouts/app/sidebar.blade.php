@@ -49,6 +49,10 @@
                         {{ __('Facturación') }}
                     </flux:navlist.item>
 
+                    <flux:navlist.item icon="document-chart-bar" :href="route('reportes.ingresos')" :current="request()->routeIs('reportes.ingresos')" wire:navigate>
+                        {{ __('Reportes de Ingresos') }}
+                    </flux:navlist.item>
+
                     <flux:navlist.item icon="clipboard-document-list" :href="route('servicios-adicionales.index')" :current="request()->routeIs('servicios-adicionales.*')" wire:navigate>
                         {{ __('Servicios Adicionales') }}
                     </flux:navlist.item>

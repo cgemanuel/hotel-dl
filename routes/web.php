@@ -23,6 +23,7 @@ Route::middleware(['auth', 'role:recepcionista,gerente'])->group(function () {
     })->name('habitaciones.index');
     Route::get('/facturacion', \App\Livewire\Facturacion\Index::class)->name('facturacion.index');
     Route::get('/servicios-adicionales', \App\Livewire\ServiciosAdicionales\Index::class)->name('servicios-adicionales.index');
+    Route::get('/reportes/ingresos', \App\Livewire\Reportes\ReportesIngresos::class)->name('reportes.ingresos');
 });
 
 // ✅ RUTAS EXCLUSIVAS PARA GERENTES

@@ -207,6 +207,7 @@ class CrearReserva extends Component
                 'clientes_idclientes' => $this->cliente_id,
                 'estacionamiento_no_espacio' => ($this->necesita_estacionamiento && $this->espacio_estacionamiento) ? $this->espacio_estacionamiento : null,
                 'plat_reserva_idplat_reserva' => $this->plataforma_id,
+                'created_by' => auth()->id(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
