@@ -239,12 +239,16 @@ class Index extends Component
     {
         $checkIn = Carbon::parse($reserva->fecha_check_in);
         $checkOut = Carbon::parse($reserva->fecha_check_out);
-        $dias = $checkOut->diffInDays($checkIn);
+
+        // Garantizamos al menos 1 día
+        $dias = max($checkOut->diffInDays($checkIn), 1);
 
         $subtotal = ($reserva->precio ?? 0) * $dias;
         $comision = ($reserva->comision ?? 0) / 100;
         $montoComision = $subtotal * $comision;
-        $total = $subtotal + $montoComision;
+
+        // Evita totales negativos
+        $total = max($subtotal + $montoComision, 0);
 
         return [
             'dias' => $dias,
@@ -255,6 +259,7 @@ class Index extends Component
             'total' => $total
         ];
     }
+
 
     public function ver($id)
     {

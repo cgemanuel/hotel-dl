@@ -125,28 +125,32 @@ class ReportesIngresos extends Component
             return 0;
         }
 
-        // Calcular días de estancia
+        // Calcular días de estancia con mínimo 1 día
         $checkIn = Carbon::parse($reserva->fecha_check_in);
         $checkOut = Carbon::parse($reserva->fecha_check_out);
-        $dias = $checkOut->diffInDays($checkIn);
+        $dias = max($checkOut->diffInDays($checkIn), 1);
 
         // Calcular subtotal
-        $subtotal = $habitacion->precio * $dias;
+        $subtotal = ($habitacion->precio ?? 0) * $dias;
 
         // Obtener comisión si existe
         $comision = 0;
-        if ($reserva->plat_reserva_idplat_reserva) {
+        if (!empty($reserva->plat_reserva_idplat_reserva)) {
             $plataforma = DB::table('plat_reserva')
                 ->where('idplat_reserva', $reserva->plat_reserva_idplat_reserva)
                 ->first();
 
-            if ($plataforma) {
+            if ($plataforma && isset($plataforma->comision)) {
                 $comision = $subtotal * ($plataforma->comision / 100);
             }
         }
 
-        return $subtotal + $comision;
+        // Asegurar que el total nunca sea negativo
+        $total = max($subtotal + $comision, 0);
+
+        return $total;
     }
+
 
     public function limpiarReporte()
     {
