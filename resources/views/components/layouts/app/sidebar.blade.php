@@ -49,6 +49,10 @@
                         {{ __('Facturación') }}
                     </flux:navlist.item>
 
+                    <flux:navlist.item icon="magnifying-glass-circle" :href="route('reservas.calendario-visual')" wire:navigate>
+                        {{ __('Calendario Visual') }}
+                    </flux:navlist.item>
+
                     <flux:navlist.item icon="document-chart-bar" :href="route('reportes.ingresos')" :current="request()->routeIs('reportes.ingresos')" wire:navigate>
                         {{ __('Reportes de Ingresos') }}
                     </flux:navlist.item>
@@ -56,6 +60,12 @@
                     <flux:navlist.item icon="clipboard-document-list" :href="route('servicios-adicionales.index')" :current="request()->routeIs('servicios-adicionales.*')" wire:navigate>
                         {{ __('Servicios Adicionales') }}
                     </flux:navlist.item>
+
+                    <flux:navlist.item icon="magnifying-glass-circle" :href="route('reservas.busqueda-avanzada')" wire:navigate>
+                        {{ __('Búsqueda Avanzada') }}
+                    </flux:navlist.item>
+
+
                 </flux:navlist.group>
 
                 {{-- ✅ SOLO VISIBLE PARA GERENTES --}}
@@ -68,6 +78,17 @@
                     <flux:navlist.item icon="square-3-stack-3d" :href="route('gerente.estacionamiento')" :current="request()->routeIs('gerente.estacionamiento')" wire:navigate>
                         {{ __('Gestión Estacionamiento') }}
                     </flux:navlist.item>
+
+                    <flux:navlist.item icon="clipboard-document-check" :href="route('audit-log.index')" wire:navigate>
+                        {{ __('Historial de Auditoría') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item icon="clipboard-document-list" :href="route('reportes.reportes-avanzados')" :current="request()->routeIs('gerente.servicios-adicionales')" wire:navigate>
+                        {{ __('Reportes Avanzados') }}
+                    </flux:navlist.item>
+
+
+
                 </flux:navlist.group>
                 @endif
             </flux:navlist>

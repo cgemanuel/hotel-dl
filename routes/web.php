@@ -24,12 +24,27 @@ Route::middleware(['auth', 'role:recepcionista,gerente'])->group(function () {
     Route::get('/facturacion', \App\Livewire\Facturacion\Index::class)->name('facturacion.index');
     Route::get('/servicios-adicionales', \App\Livewire\ServiciosAdicionales\Index::class)->name('servicios-adicionales.index');
     Route::get('/reportes/ingresos', \App\Livewire\Reportes\ReportesIngresos::class)->name('reportes.ingresos');
+    Route::get('/reservas/calendariovisual', \App\Livewire\Reservas\CalendarioVisual::class)->name('reservas.calendariovisual');
 });
 
 // ✅ RUTAS EXCLUSIVAS PARA GERENTES
 Route::middleware(['auth', 'role:gerente'])->group(function () {
     Route::get('/gerente/habitaciones', \App\Livewire\Gerente\GestionHabitaciones::class)->name('gerente.habitaciones');
     Route::get('/gerente/estacionamiento', \App\Livewire\Gerente\GestionEstacionamiento::class)->name('gerente.estacionamiento');
+    Route::get('/reportes/reportesavanzados', \App\Livewire\Reportes\ReportesAvanzados::class)->name('reportes.reportesavanzados');
+
+});
+
+Route::middleware(['auth', 'role:recepcionista,gerente'])->group(function () {
+    // Búsqueda Avanzada
+    Route::get('/busqueda-avanzada', \App\Livewire\Reservas\BusquedaAvanzada::class)
+        ->name('reservas.busqueda-avanzada');
+});
+
+Route::middleware(['auth', 'role:gerente'])->group(function () {
+    // Audit Log (solo gerentes)
+    Route::get('/audit-log', \App\Livewire\AuditLog\Index::class)
+        ->name('audit-log.index');
 });
 
 Route::middleware(['auth'])->group(function () {
