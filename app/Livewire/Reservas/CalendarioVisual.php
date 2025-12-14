@@ -96,20 +96,22 @@ class CalendarioVisual extends Component
         $primerDia = Carbon::create($this->anioActual, $this->mesActual, 1);
         $ultimoDia = $primerDia->copy()->endOfMonth();
 
-        // Obtener todas las reservas del mes para mostrar en el calendario
+        // CORREGIDO: ahora SI trae todas las reservas del mes completo
         $reservasMes = DB::table('reservas')
-            ->whereYear('fecha_check_in', $this->anioActual)
-            ->whereMonth('fecha_check_in', $this->mesActual)
             ->whereIn('estado', ['confirmada', 'pendiente'])
-            ->orWhere(function($query) {
-                $query->whereYear('fecha_check_out', $this->anioActual)
-                      ->whereMonth('fecha_check_out', $this->mesActual)
-                      ->whereIn('estado', ['confirmada', 'pendiente']);
+            ->where(function ($q) {
+                $q->whereYear('fecha_check_in', $this->anioActual)
+                  ->whereMonth('fecha_check_in', $this->mesActual);
+            })
+            ->orWhere(function ($q) {
+                $q->whereIn('estado', ['confirmada', 'pendiente'])
+                  ->whereYear('fecha_check_out', $this->anioActual)
+                  ->whereMonth('fecha_check_out', $this->mesActual);
             })
             ->select('fecha_check_in', 'fecha_check_out', 'estado')
             ->get();
 
-        // Agrupar reservas por día
+        // Agrupar reservas por día (funciona bien)
         $reservasPorDia = [];
         foreach ($reservasMes as $reserva) {
             $inicio = Carbon::parse($reserva->fecha_check_in);

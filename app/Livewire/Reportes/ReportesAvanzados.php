@@ -227,14 +227,83 @@ class ReportesAvanzados extends Component
     }
 
     public function exportarPDF()
-    {
-        session()->flash('message', 'Exportación a PDF en desarrollo...');
-    }
+        {
+            if (!$this->reporte_generado) {
+                session()->flash('error', 'Debes generar un reporte primero');
+                return;
+            }
 
-    public function exportarExcel()
-    {
-        session()->flash('message', 'Exportación a Excel en desarrollo...');
-    }
+            try {
+                $datos = [
+                    'tipo_reporte' => $this->tipoReporte,
+                    'fecha_inicio' => $this->fecha_inicio,
+                    'fecha_fin' => $this->fecha_fin,
+                    'datosRentabilidad' => $this->datosRentabilidad,
+                    'datosTemporadas' => $this->datosTemporadas,
+                    'datosComparativos' => $this->datosComparativos,
+                    'fecha_generacion' => now()->format('d/m/Y H:i'),
+                    'usuario' => auth()->user()->name,
+                ];
+
+                $html = view('livewire.reportes.pdf-avanzado-template', $datos)->render();
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html);
+                $pdf->setPaper('letter', 'portrait');
+
+                $filename = 'reporte_' . $this->tipoReporte . '_' . date('Y-m-d') . '.pdf';
+
+                return response()->streamDownload(function() use ($pdf) {
+                    echo $pdf->output();
+                }, $filename);
+
+            } catch (\Exception $e) {
+                session()->flash('error', 'Error al generar PDF: ' . $e->getMessage());
+            }
+        }
+
+        public function exportarExcel()
+        {
+            if (!$this->reporte_generado) {
+                session()->flash('error', 'Debes generar un reporte primero');
+                return;
+            }
+
+            try {
+                $filename = 'reporte_' . $this->tipoReporte . '_' . date('Y-m-d') . '.xlsx';
+
+                if ($this->tipoReporte === 'rentabilidad') {
+                    return \Maatwebsite\Excel\Facades\Excel::download(
+                        new \App\Exports\ReporteRentabilidadExport(
+                            $this->datosRentabilidad,
+                            $this->fecha_inicio,
+                            $this->fecha_fin
+                        ),
+                        $filename
+                    );
+                } elseif ($this->tipoReporte === 'temporadas') {
+                    return \Maatwebsite\Excel\Facades\Excel::download(
+                        new \App\Exports\ReporteTemporadasExport(
+                            $this->datosTemporadas,
+                            $this->fecha_inicio,
+                            $this->fecha_fin
+                        ),
+                        $filename
+                    );
+                } elseif ($this->tipoReporte === 'comparativas') {
+                    return \Maatwebsite\Excel\Facades\Excel::download(
+                        new \App\Exports\ReporteComparativoExport(
+                            $this->datosComparativos,
+                            $this->fecha_inicio,
+                            $this->fecha_fin
+                        ),
+                        $filename
+                    );
+                }
+
+            } catch (\Exception $e) {
+                session()->flash('error', 'Error al generar Excel: ' . $e->getMessage());
+            }
+        }
+
 
     public function render()
     {

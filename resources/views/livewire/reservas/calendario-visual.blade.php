@@ -65,94 +65,84 @@
     </div>
 
     <!-- Calendario -->
-    <div class="bg-white dark:bg-zinc-900 rounded-lg shadow-xl border-2 border-teal-200 dark:border-teal-800 overflow-hidden">
-        <!-- Encabezado de días de la semana -->
-        <div class="grid grid-cols-7 bg-teal-800 dark:bg-teal-900">
+    <div class="bg-white dark:bg-zinc-900 rounded-lg shadow-xl border border-gray-300 dark:border-gray-700">
+
+        <!-- Encabezado de días -->
+        <div class="grid grid-cols-7 bg-teal-800 dark:bg-teal-900 text-white text-center font-semibold text-sm">
             @foreach(['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as $dia)
-                <div class="p-3 text-center text-white font-semibold text-sm border-r border-teal-700 last:border-r-0">
+                <div class="py-3 border-r border-teal-700 last:border-r-0">
                     {{ $dia }}
                 </div>
             @endforeach
         </div>
 
         <!-- Cuerpo del calendario -->
-        <div class="grid grid-cols-7">
+        <div class="grid grid-cols-7 auto-rows-[140px]">
+
             @php
-                $diaSemanaInicio = $primerDia->dayOfWeek; // 0 = domingo
+                // Carbon → Domingo = 0 ... Sábado = 6 (correcto)
+                $diaSemanaInicio = $primerDia->dayOfWeek;
+
                 $diasEnMes = $ultimoDia->day;
                 $diaActual = 1;
                 $hoy = now()->format('Y-m-d');
             @endphp
 
-            @for($semana = 0; $semana < 6; $semana++)
-                @for($diaSemana = 0; $diaSemana < 7; $diaSemana++)
+            @for($i = 0; $i < 42; $i++)
+                @php
+                    $mostrarDia = $i >= $diaSemanaInicio && $diaActual <= $diasEnMes;
+                @endphp
+
+                @if($mostrarDia)
                     @php
-                        $mostrarDia = ($semana == 0 && $diaSemana >= $diaSemanaInicio) ||
-                                      ($semana > 0 && $diaActual <= $diasEnMes);
+                        $fechaCompleta = sprintf('%04d-%02d-%02d', $anioActual, $mesActual, $diaActual);
+                        $esHoy = $fechaCompleta === $hoy;
+                        $cantidadReservas = $reservasPorDia[$diaActual] ?? 0;
 
-                        if ($mostrarDia && $diaActual <= $diasEnMes) {
-                            $fechaCompleta = sprintf('%04d-%02d-%02d', $anioActual, $mesActual, $diaActual);
-                            $esHoy = $fechaCompleta === $hoy;
-                            $cantidadReservas = $reservasPorDia[$diaActual] ?? 0;
-
-                            // Determinar color según cantidad de reservas
-                            if ($cantidadReservas == 0) {
-                                $colorFondo = 'bg-gray-50 dark:bg-gray-800/50';
-                            } elseif ($cantidadReservas <= 2) {
-                                $colorFondo = 'bg-green-50 dark:bg-green-900/20';
-                            } elseif ($cantidadReservas <= 5) {
-                                $colorFondo = 'bg-yellow-50 dark:bg-yellow-900/20';
-                            } else {
-                                $colorFondo = 'bg-red-50 dark:bg-red-900/20';
-                            }
-                        }
+                        if ($cantidadReservas == 0) $colorFondo = 'bg-gray-50 dark:bg-gray-800/50';
+                        elseif ($cantidadReservas <= 2) $colorFondo = 'bg-green-50 dark:bg-green-900/20';
+                        elseif ($cantidadReservas <= 5) $colorFondo = 'bg-yellow-50 dark:bg-yellow-900/20';
+                        else $colorFondo = 'bg-red-50 dark:bg-red-900/20';
                     @endphp
 
-                    @if($mostrarDia && $diaActual <= $diasEnMes)
-                        <button
-                            wire:click="verReservasDelDia('{{ $fechaCompleta }}')"
-                            class="min-h-[100px] p-3 border border-gray-200 dark:border-gray-700 {{ $colorFondo }} hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors text-left relative group"
-                        >
-                            <div class="flex flex-col h-full">
-                                <span class="text-lg font-bold {{ $esHoy ? 'text-teal-600 dark:text-teal-400' : 'text-gray-900 dark:text-gray-100' }}">
-                                    {{ $diaActual }}
-                                </span>
+                    <button
+                        wire:click="verReservasDelDia('{{ $fechaCompleta }}')"
+                        class="p-3 border border-gray-200 dark:border-gray-700 text-left relative {{ $colorFondo }} hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors"
+                    >
+                        <span class="text-lg font-bold {{ $esHoy ? 'text-teal-600 dark:text-teal-400' : 'text-gray-900 dark:text-gray-100' }}">
+                            {{ $diaActual }}
+                        </span>
 
-                                @if($esHoy)
-                                    <span class="absolute top-1 right-1 px-2 py-0.5 bg-teal-600 text-white text-xs rounded-full">
-                                        Hoy
-                                    </span>
-                                @endif
+                        @if($esHoy)
+                            <span class="absolute top-2 right-2 px-2 py-0.5 bg-teal-600 text-white text-xs rounded-full">
+                                Hoy
+                            </span>
+                        @endif
 
-                                @if($cantidadReservas > 0)
-                                    <div class="mt-2 flex-1">
-                                        <div class="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-                                                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
-                                            </svg>
-                                            {{ $cantidadReservas }} reserva{{ $cantidadReservas > 1 ? 's' : '' }}
-                                        </div>
-                                    </div>
-                                @endif
-
-                                <div class="absolute inset-0 bg-teal-500 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none"></div>
+                        @if($cantidadReservas > 0)
+                            <div class="mt-2 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                                    <path fill-rule="evenodd"
+                                        d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                                        clip-rule="evenodd"/>
+                                </svg>
+                                {{ $cantidadReservas }} reserva{{ $cantidadReservas > 1 ? 's' : '' }}
                             </div>
-                        </button>
-                        @php $diaActual++; @endphp
-                    @else
-                        <div class="min-h-[100px] p-3 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900/50"></div>
-                    @endif
-                @endfor
+                        @endif
+                    </button>
 
-                @if($diaActual > $diasEnMes)
-                    @break
+                    @php $diaActual++; @endphp
+
+                @else
+                    <div class="border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900/40"></div>
                 @endif
+
             @endfor
         </div>
     </div>
 
-    <!-- Modal de Reservas del Día -->
+    <!-- Modal -->
     @if($mostrarModalDia)
     <div class="fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4">
