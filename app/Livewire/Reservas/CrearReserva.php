@@ -136,7 +136,6 @@ class CrearReserva extends Component
 
     public function guardar()
     {
-        // Validaciones
         $this->validate([
             'folio' => 'required|string|max:50|unique:reservas,folio',
             'nom_completo' => 'required|min:3',
@@ -165,7 +164,6 @@ class CrearReserva extends Component
             'metodo_pago.required' => 'Debe seleccionar un método de pago',
         ]);
 
-        // Validar montos en pago combinado
         if ($this->metodo_pago === 'combinado') {
             $total = $this->monto_efectivo + $this->monto_tarjeta + $this->monto_transferencia;
             if ($total <= 0) {
@@ -177,7 +175,6 @@ class CrearReserva extends Component
         try {
             DB::beginTransaction();
 
-            // Crear o usar cliente existente
             if (!$this->cliente_existente) {
                 $this->cliente_id = DB::table('clientes')->insertGetId([
                     'nom_completo' => $this->nom_completo,
@@ -192,7 +189,6 @@ class CrearReserva extends Component
                 ]);
             }
 
-            // ✅ CREAR RESERVA (sin campos de habitación aquí)
             $reserva_id = DB::table('reservas')->insertGetId([
                 'folio' => $this->folio,
                 'fecha_reserva' => $this->fecha_reserva,
@@ -212,20 +208,31 @@ class CrearReserva extends Component
                 'updated_at' => now(),
             ]);
 
-            // ✅ RELACIONAR HABITACIÓN con RESERVA en tabla intermedia
+            // AUDITORÍA: Registrar creación de reserva
+            \App\Services\AuditService::logCreated(
+                'Reserva',
+                $reserva_id,
+                [
+                    'folio' => $this->folio,
+                    'cliente_id' => $this->cliente_id,
+                    'habitacion_id' => $this->habitacion_id,
+                    'fecha_check_in' => $this->fecha_check_in,
+                    'fecha_check_out' => $this->fecha_check_out,
+                    'estado' => 'confirmada',
+                    'metodo_pago' => $this->metodo_pago,
+                    'plataforma_id' => $this->plataforma_id,
+                ]
+            );
+
             DB::table('habitaciones_has_reservas')->insert([
                 'habitaciones_idhabitacion' => $this->habitacion_id,
                 'reservas_idreservas' => $reserva_id,
             ]);
 
-            // ✅ ACTUALIZAR ESTADO DE LA HABITACIÓN
             DB::table('habitaciones')
                 ->where('idhabitacion', $this->habitacion_id)
-                ->update([
-                    'estado' => 'ocupada',
-                ]);
+                ->update(['estado' => 'ocupada']);
 
-            // ✅ ACTUALIZAR ESTACIONAMIENTO si fue seleccionado
             if ($this->necesita_estacionamiento && $this->espacio_estacionamiento) {
                 DB::table('estacionamiento')
                     ->where('no_espacio', $this->espacio_estacionamiento)

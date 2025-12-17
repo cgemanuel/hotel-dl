@@ -165,11 +165,22 @@ class CroquisHabitaciones extends Component
     public function cambiarEstadoHabitacion($habitacionId, $nuevoEstado)
     {
         try {
+            // Obtener estado anterior
+            $habitacion = DB::table('habitaciones')
+                ->where('idhabitacion', $habitacionId)
+                ->first();
+
+            // AUDITORÍA: Registrar cambio de estado
+            \App\Services\AuditService::logUpdated(
+                'Habitacion',
+                $habitacionId,
+                ['estado' => $habitacion->estado],
+                ['estado' => $nuevoEstado]
+            );
+
             DB::table('habitaciones')
                 ->where('idhabitacion', $habitacionId)
-                ->update([
-                    'estado' => $nuevoEstado,
-                ]);
+                ->update(['estado' => $nuevoEstado]);
 
             session()->flash('message', 'Estado de la habitación actualizado exitosamente.');
 

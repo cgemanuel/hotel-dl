@@ -44,6 +44,16 @@ class GestionEstacionamiento extends Component
                 'estado' => 'disponible',
             ]);
 
+            // 🔥 AUDITORÍA: Registrar creación
+            \App\Services\AuditService::logCreated(
+                'Estacionamiento',
+                $this->no_espacio,
+                [
+                    'no_espacio' => $this->no_espacio,
+                    'estado' => 'disponible',
+                ]
+            );
+
             session()->flash('message', 'Espacio de estacionamiento creado exitosamente.');
             $this->cerrarModal();
             $this->cargarEspacios();
@@ -64,6 +74,16 @@ class GestionEstacionamiento extends Component
                 session()->flash('error', 'No se puede eliminar. El espacio tiene reservas activas.');
                 return;
             }
+
+            // AUDITORÍA: Registrar eliminación
+            \App\Services\AuditService::logDeleted(
+                'Estacionamiento',
+                $noEspacio,
+                [
+                    'no_espacio' => $noEspacio,
+                    'estado' => 'disponible',
+                ]
+            );
 
             DB::table('estacionamiento')->where('no_espacio', $noEspacio)->delete();
             session()->flash('message', 'Espacio eliminado exitosamente.');

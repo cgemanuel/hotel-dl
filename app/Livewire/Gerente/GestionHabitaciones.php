@@ -66,6 +66,31 @@ class GestionHabitaciones extends Component
             ]);
 
             try {
+                // Obtener valores anteriores
+                $habitacionAnterior = DB::table('habitaciones')
+                    ->where('idhabitacion', $this->editando_id)
+                    ->first();
+
+                // AUDITORÍA: Registrar actualización
+                \App\Services\AuditService::logUpdated(
+                    'Habitacion',
+                    $this->editando_id,
+                    [
+                        'no_habitacion' => $habitacionAnterior->no_habitacion,
+                        'tipo' => $habitacionAnterior->tipo,
+                        'precio' => $habitacionAnterior->precio,
+                        'estado' => $habitacionAnterior->estado,
+                        'planta' => $habitacionAnterior->planta,
+                    ],
+                    [
+                        'no_habitacion' => $this->no_habitacion,
+                        'tipo' => $this->tipo,
+                        'precio' => $this->precio,
+                        'estado' => $this->estado,
+                        'planta' => $this->planta,
+                    ]
+                );
+
                 DB::table('habitaciones')
                     ->where('idhabitacion', $this->editando_id)
                     ->update([
@@ -85,13 +110,26 @@ class GestionHabitaciones extends Component
             $this->validate();
 
             try {
-                DB::table('habitaciones')->insert([
+                $habitacionId = DB::table('habitaciones')->insertGetId([
                     'no_habitacion' => $this->no_habitacion,
                     'tipo' => $this->tipo,
                     'precio' => $this->precio,
                     'estado' => $this->estado,
                     'planta' => $this->planta,
                 ]);
+
+                // AUDITORÍA: Registrar creación
+                \App\Services\AuditService::logCreated(
+                    'Habitacion',
+                    $habitacionId,
+                    [
+                        'no_habitacion' => $this->no_habitacion,
+                        'tipo' => $this->tipo,
+                        'precio' => $this->precio,
+                        'estado' => $this->estado,
+                        'planta' => $this->planta,
+                    ]
+                );
 
                 session()->flash('message', 'Habitación creada exitosamente.');
                 $this->cerrarModal();
@@ -114,6 +152,22 @@ class GestionHabitaciones extends Component
                 session()->flash('error', 'No se puede eliminar. La habitación tiene reservas activas.');
                 return;
             }
+
+            // Obtener datos antes de eliminar
+            $habitacion = DB::table('habitaciones')->where('idhabitacion', $habitacionId)->first();
+
+            //  AUDITORÍA: Registrar eliminación
+            \App\Services\AuditService::logDeleted(
+                'Habitacion',
+                $habitacionId,
+                [
+                    'no_habitacion' => $habitacion->no_habitacion,
+                    'tipo' => $habitacion->tipo,
+                    'precio' => $habitacion->precio,
+                    'estado' => $habitacion->estado,
+                    'planta' => $habitacion->planta,
+                ]
+            );
 
             DB::table('habitaciones')->where('idhabitacion', $habitacionId)->delete();
             session()->flash('message', 'Habitación eliminada exitosamente.');

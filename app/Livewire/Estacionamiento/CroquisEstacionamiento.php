@@ -56,6 +56,19 @@ class CroquisEstacionamiento extends Component
     public function cambiarEstadoEspacio($numero, $nuevoEstado)
     {
         try {
+            // Obtener estado anterior
+            $espacio = DB::table('estacionamiento')
+                ->where('no_espacio', $numero)
+                ->first();
+
+            //  AUDITORÍA: Registrar cambio de estado
+            \App\Services\AuditService::logUpdated(
+                'Estacionamiento',
+                $numero,
+                ['estado' => $espacio->estado],
+                ['estado' => $nuevoEstado]
+            );
+
             DB::table('estacionamiento')
                 ->where('no_espacio', $numero)
                 ->update([
