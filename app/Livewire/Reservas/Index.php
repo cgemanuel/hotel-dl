@@ -1,4 +1,5 @@
 <?php
+// app/Livewire/Reservas/Index.php - ACTUALIZADO CON CAMPOS DE VEHÍCULO Y TOTAL
 
 namespace App\Livewire\Reservas;
 
@@ -26,6 +27,11 @@ class Index extends Component
     public $espacio_seleccionado = '';
     public $espacios_disponibles = [];
 
+    // Campos nuevos para vehículo
+    public $tipo_vehiculo_temp = '';
+    public $descripcion_vehiculo_temp = '';
+    public $mostrar_form_vehiculo = false;
+
     public $editando_id;
     public $edit_fecha_reserva;
     public $edit_fecha_check_in;
@@ -33,6 +39,9 @@ class Index extends Component
     public $edit_no_personas;
     public $edit_estado;
     public $edit_estacionamiento_no_espacio;
+    public $edit_total_reserva;
+    public $edit_tipo_vehiculo;
+    public $edit_descripcion_vehiculo;
 
     protected $queryString = ['search', 'fecha_inicio', 'fecha_fin', 'estado_filtro'];
     protected $listeners = ['reserva-creada' => '$refresh', 'reserva-eliminada' => '$refresh', 'reserva-actualizada' => '$refresh'];
@@ -70,6 +79,11 @@ class Index extends Component
             })->values();
 
             $this->espacio_seleccionado = $reserva->estacionamiento_no_espacio ?? '';
+            $this->tipo_vehiculo_temp = $reserva->tipo_vehiculo ?? '';
+            $this->descripcion_vehiculo_temp = $reserva->descripcion_vehiculo ?? '';
+
+            // Si ya tiene estacionamiento asignado, mostrar form de vehículo
+            $this->mostrar_form_vehiculo = !empty($this->espacio_seleccionado);
 
             $this->mostrarModalEstacionamiento = true;
 
@@ -78,8 +92,31 @@ class Index extends Component
         }
     }
 
+    public function updatedEspacioSeleccionado($value)
+    {
+        // Si se selecciona un espacio, mostrar formulario de vehículo
+        $this->mostrar_form_vehiculo = !empty($value);
+
+        // Si se deselecciona, limpiar campos de vehículo
+        if (empty($value)) {
+            $this->tipo_vehiculo_temp = '';
+            $this->descripcion_vehiculo_temp = '';
+        }
+    }
+
     public function guardarEstacionamiento()
     {
+        // Validar campos de vehículo si se asignó estacionamiento
+        if ($this->espacio_seleccionado) {
+            $this->validate([
+                'espacio_seleccionado' => 'required',
+                'tipo_vehiculo_temp' => 'required|string|max:100',
+                'descripcion_vehiculo_temp' => 'nullable|string|max:500',
+            ], [
+                'tipo_vehiculo_temp.required' => 'El tipo de vehículo es obligatorio al asignar estacionamiento',
+            ]);
+        }
+
         try {
             DB::beginTransaction();
 
@@ -91,12 +128,20 @@ class Index extends Component
                 throw new \Exception('Reserva no encontrada');
             }
 
-            // 🔥 AUDITORÍA: Registrar cambio ANTES de modificar
+            // AUDITORÍA
             AuditService::logUpdated(
                 'Reserva',
                 $this->reserva_para_estacionamiento,
-                ['estacionamiento_no_espacio' => $reserva->estacionamiento_no_espacio],
-                ['estacionamiento_no_espacio' => $this->espacio_seleccionado ?: null]
+                [
+                    'estacionamiento_no_espacio' => $reserva->estacionamiento_no_espacio,
+                    'tipo_vehiculo' => $reserva->tipo_vehiculo,
+                    'descripcion_vehiculo' => $reserva->descripcion_vehiculo,
+                ],
+                [
+                    'estacionamiento_no_espacio' => $this->espacio_seleccionado ?: null,
+                    'tipo_vehiculo' => $this->tipo_vehiculo_temp ?: null,
+                    'descripcion_vehiculo' => $this->descripcion_vehiculo_temp ?: null,
+                ]
             );
 
             if ($reserva->estacionamiento_no_espacio &&
@@ -123,6 +168,8 @@ class Index extends Component
                 ->where('idreservas', $this->reserva_para_estacionamiento)
                 ->update([
                     'estacionamiento_no_espacio' => $this->espacio_seleccionado ?: null,
+                    'tipo_vehiculo' => $this->tipo_vehiculo_temp ?: null,
+                    'descripcion_vehiculo' => $this->descripcion_vehiculo_temp ?: null,
                     'updated_at' => now()
                 ]);
 
@@ -144,6 +191,9 @@ class Index extends Component
         $this->reserva_para_estacionamiento = null;
         $this->espacio_seleccionado = '';
         $this->espacios_disponibles = [];
+        $this->tipo_vehiculo_temp = '';
+        $this->descripcion_vehiculo_temp = '';
+        $this->mostrar_form_vehiculo = false;
     }
 
     public function render()
@@ -162,12 +212,14 @@ class Index extends Component
                 'reservas.no_personas',
                 'reservas.estado',
                 'reservas.estacionamiento_no_espacio',
+                'reservas.total_reserva',
+                'reservas.tipo_vehiculo',
+                'reservas.descripcion_vehiculo',
                 'clientes.nom_completo',
                 'clientes.telefono',
                 'clientes.correo',
                 'plat_reserva.nombre_plataforma',
                 'plat_reserva.comision',
-                DB::raw('MAX(habitaciones.precio) as precio'),
                 DB::raw('MAX(habitaciones.no_habitacion) as no_habitacion'),
                 DB::raw('MAX(habitaciones.tipo) as tipo_habitacion')
             )
@@ -180,6 +232,9 @@ class Index extends Component
                 'reservas.no_personas',
                 'reservas.estado',
                 'reservas.estacionamiento_no_espacio',
+                'reservas.total_reserva',
+                'reservas.tipo_vehiculo',
+                'reservas.descripcion_vehiculo',
                 'clientes.nom_completo',
                 'clientes.telefono',
                 'clientes.correo',
@@ -209,36 +264,9 @@ class Index extends Component
 
         $reservas = $query->orderBy('reservas.idreservas', 'desc')->paginate(10);
 
-        foreach ($reservas as $reserva) {
-            $reserva->total_calculado = $this->calcularTotal($reserva);
-        }
-
         return view('livewire.reservas.index', [
             'reservas' => $reservas
         ]);
-    }
-
-    private function calcularTotal($reserva)
-    {
-        $checkIn = Carbon::parse($reserva->fecha_check_in);
-        $checkOut = Carbon::parse($reserva->fecha_check_out);
-
-        $dias = max($checkOut->diffInDays($checkIn), 1);
-
-        $subtotal = ($reserva->precio ?? 0) * $dias;
-        $comision = ($reserva->comision ?? 0) / 100;
-        $montoComision = $subtotal * $comision;
-
-        $total = max($subtotal + $montoComision, 0);
-
-        return [
-            'dias' => $dias,
-            'precio_noche' => $reserva->precio ?? 0,
-            'subtotal' => $subtotal,
-            'comision_porcentaje' => $reserva->comision ?? 0,
-            'monto_comision' => $montoComision,
-            'total' => $total
-        ];
     }
 
     public function ver($id)
@@ -264,7 +292,6 @@ class Index extends Component
                     'clientes.pais_origen',
                     'habitaciones.no_habitacion',
                     'habitaciones.tipo as tipo_habitacion',
-                    'habitaciones.precio',
                     'plat_reserva.nombre_plataforma',
                     'plat_reserva.comision',
                     'estacionamiento.no_espacio'
@@ -272,20 +299,7 @@ class Index extends Component
                 ->first();
 
             if ($reserva) {
-                $totales = $this->calcularTotal($reserva);
-
-                $this->reservaSeleccionada = array_merge(
-                    (array) $reserva,
-                    [
-                        'total_dias' => $totales['dias'],
-                        'total_precio_noche' => $totales['precio_noche'],
-                        'total_subtotal' => $totales['subtotal'],
-                        'total_comision_porcentaje' => $totales['comision_porcentaje'],
-                        'total_monto_comision' => $totales['monto_comision'],
-                        'total_final' => $totales['total'],
-                    ]
-                );
-
+                $this->reservaSeleccionada = (array) $reserva;
                 $this->mostrarModalVer = true;
             } else {
                 session()->flash('error', 'Reserva no encontrada.');
@@ -318,6 +332,9 @@ class Index extends Component
                 $this->edit_no_personas = $this->reservaSeleccionada->no_personas;
                 $this->edit_estado = $this->reservaSeleccionada->estado;
                 $this->edit_estacionamiento_no_espacio = $this->reservaSeleccionada->estacionamiento_no_espacio;
+                $this->edit_total_reserva = $this->reservaSeleccionada->total_reserva;
+                $this->edit_tipo_vehiculo = $this->reservaSeleccionada->tipo_vehiculo;
+                $this->edit_descripcion_vehiculo = $this->reservaSeleccionada->descripcion_vehiculo;
 
                 $todosEspacios = DB::table('estacionamiento')->get();
                 $this->espacios_disponibles = $todosEspacios->filter(function($espacio) {
@@ -337,7 +354,12 @@ class Index extends Component
     public function cerrarModalEditar()
     {
         $this->mostrarModalEditar = false;
-        $this->reset(['editando_id', 'edit_fecha_reserva', 'edit_fecha_check_in', 'edit_fecha_check_out', 'edit_no_personas', 'edit_estado', 'edit_estacionamiento_no_espacio']);
+        $this->reset([
+            'editando_id', 'edit_fecha_reserva', 'edit_fecha_check_in',
+            'edit_fecha_check_out', 'edit_no_personas', 'edit_estado',
+            'edit_estacionamiento_no_espacio', 'edit_total_reserva',
+            'edit_tipo_vehiculo', 'edit_descripcion_vehiculo'
+        ]);
     }
 
     public function actualizarReserva()
@@ -348,6 +370,7 @@ class Index extends Component
             'edit_fecha_check_out' => 'required|date|after:edit_fecha_check_in',
             'edit_no_personas' => 'required|integer|min:1',
             'edit_estado' => 'required|in:pendiente,confirmada,cancelada,completada',
+            'edit_total_reserva' => 'required|numeric|min:0',
         ]);
 
         try {
@@ -359,7 +382,6 @@ class Index extends Component
                 throw new \Exception('Reserva no encontrada');
             }
 
-            // 🔥 AUDITORÍA: Registrar cambios
             AuditService::logUpdated(
                 'Reserva',
                 $this->editando_id,
@@ -370,6 +392,9 @@ class Index extends Component
                     'no_personas' => $reservaActual->no_personas,
                     'estado' => $reservaActual->estado,
                     'estacionamiento_no_espacio' => $reservaActual->estacionamiento_no_espacio,
+                    'total_reserva' => $reservaActual->total_reserva,
+                    'tipo_vehiculo' => $reservaActual->tipo_vehiculo,
+                    'descripcion_vehiculo' => $reservaActual->descripcion_vehiculo,
                 ],
                 [
                     'fecha_reserva' => $this->edit_fecha_reserva,
@@ -378,6 +403,9 @@ class Index extends Component
                     'no_personas' => $this->edit_no_personas,
                     'estado' => $this->edit_estado,
                     'estacionamiento_no_espacio' => $this->edit_estacionamiento_no_espacio ?: null,
+                    'total_reserva' => $this->edit_total_reserva,
+                    'tipo_vehiculo' => $this->edit_tipo_vehiculo ?: null,
+                    'descripcion_vehiculo' => $this->edit_descripcion_vehiculo ?: null,
                 ]
             );
 
@@ -407,6 +435,9 @@ class Index extends Component
                     'no_personas' => $this->edit_no_personas,
                     'estado' => $this->edit_estado,
                     'estacionamiento_no_espacio' => $estacionamientoNuevo,
+                    'total_reserva' => $this->edit_total_reserva,
+                    'tipo_vehiculo' => $this->edit_tipo_vehiculo ?: null,
+                    'descripcion_vehiculo' => $this->edit_descripcion_vehiculo ?: null,
                     'updated_at' => now()
                 ]);
 
@@ -429,7 +460,6 @@ class Index extends Component
             $reserva = DB::table('reservas')->where('idreservas', $id)->first();
 
             if ($reserva) {
-                // 🔥 AUDITORÍA: Registrar cancelación
                 AuditService::logUpdated(
                     'Reserva',
                     $id,
@@ -479,7 +509,6 @@ class Index extends Component
             $reserva = DB::table('reservas')->where('idreservas', $id)->first();
 
             if ($reserva) {
-                // 🔥 AUDITORÍA: Registrar liberación
                 AuditService::logUpdated(
                     'Reserva',
                     $id,
@@ -535,7 +564,6 @@ class Index extends Component
             $reserva = DB::table('reservas')->where('idreservas', $id)->first();
 
             if ($reserva) {
-                // 🔥 AUDITORÍA: Registrar eliminación permanente
                 AuditService::logDeleted(
                     'Reserva',
                     $id,

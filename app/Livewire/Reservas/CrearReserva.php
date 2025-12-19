@@ -37,6 +37,13 @@ class CrearReserva extends Component
     public $monto_tarjeta = 0;
     public $monto_transferencia = 0;
 
+    // 🔥 NUEVO: Campo para el total de la reserva
+    public $total_reserva = 0;
+
+    // 🔥 NUEVO: Datos del vehículo
+    public $tipo_vehiculo = '';
+    public $descripcion_vehiculo = '';
+
     public $clientes = [];
     public $habitaciones = [];
     public $espacios_estacionamiento = [];
@@ -81,6 +88,8 @@ class CrearReserva extends Component
             $this->cargarEstacionamientos();
         } else {
             $this->espacio_estacionamiento = '';
+            $this->tipo_vehiculo = '';
+            $this->descripcion_vehiculo = '';
             $this->espacios_estacionamiento = [];
         }
     }
@@ -94,7 +103,7 @@ class CrearReserva extends Component
             'fecha_check_in', 'fecha_check_out', 'no_personas',
             'habitacion_id', 'necesita_estacionamiento', 'espacio_estacionamiento',
             'plataforma_id', 'metodo_pago', 'monto_efectivo', 'monto_tarjeta', 'monto_transferencia',
-            'folio'
+            'total_reserva', 'tipo_vehiculo', 'descripcion_vehiculo', 'folio'
         ]);
         $this->cliente_existente = false;
         $this->pais_origen = 'México';
@@ -136,7 +145,7 @@ class CrearReserva extends Component
 
     public function guardar()
     {
-        $this->validate([
+        $rules = [
             'folio' => 'required|string|max:50|unique:reservas,folio',
             'nom_completo' => 'required|min:3',
             'tipo_identificacion' => 'required',
@@ -153,7 +162,16 @@ class CrearReserva extends Component
             'espacio_estacionamiento' => 'nullable|exists:estacionamiento,no_espacio',
             'plataforma_id' => 'required|exists:plat_reserva,idplat_reserva',
             'metodo_pago' => 'required|in:efectivo,tarjeta,transferencia,combinado',
-        ], [
+            'total_reserva' => 'required|numeric|min:0',
+        ];
+
+        // Si necesita estacionamiento, validar datos del vehículo
+        if ($this->necesita_estacionamiento && $this->espacio_estacionamiento) {
+            $rules['tipo_vehiculo'] = 'required|string|max:100';
+            $rules['descripcion_vehiculo'] = 'required|string|max:500';
+        }
+
+        $this->validate($rules, [
             'folio.required' => 'El folio es obligatorio',
             'folio.unique' => 'Este folio ya existe',
             'nom_completo.required' => 'El nombre completo es obligatorio',
@@ -162,6 +180,10 @@ class CrearReserva extends Component
             'fecha_check_out.after' => 'La fecha de check-out debe ser posterior al check-in',
             'edad.min' => 'El cliente debe ser mayor de edad',
             'metodo_pago.required' => 'Debe seleccionar un método de pago',
+            'total_reserva.required' => 'Debe ingresar el total de la reserva',
+            'total_reserva.min' => 'El total debe ser mayor a 0',
+            'tipo_vehiculo.required' => 'El tipo de vehículo es obligatorio',
+            'descripcion_vehiculo.required' => 'La descripción del vehículo es obligatoria',
         ]);
 
         if ($this->metodo_pago === 'combinado') {
@@ -200,15 +222,18 @@ class CrearReserva extends Component
                 'monto_efectivo' => $this->monto_efectivo ?? 0,
                 'monto_tarjeta' => $this->monto_tarjeta ?? 0,
                 'monto_transferencia' => $this->monto_transferencia ?? 0,
+                'total_reserva' => $this->total_reserva,
                 'clientes_idclientes' => $this->cliente_id,
                 'estacionamiento_no_espacio' => ($this->necesita_estacionamiento && $this->espacio_estacionamiento) ? $this->espacio_estacionamiento : null,
+                'tipo_vehiculo' => ($this->necesita_estacionamiento && $this->espacio_estacionamiento) ? $this->tipo_vehiculo : null,
+                'descripcion_vehiculo' => ($this->necesita_estacionamiento && $this->espacio_estacionamiento) ? $this->descripcion_vehiculo : null,
                 'plat_reserva_idplat_reserva' => $this->plataforma_id,
                 'created_by' => auth()->id(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            // AUDITORÍA: Registrar creación de reserva
+            // AUDITORÍA
             \App\Services\AuditService::logCreated(
                 'Reserva',
                 $reserva_id,
@@ -219,8 +244,7 @@ class CrearReserva extends Component
                     'fecha_check_in' => $this->fecha_check_in,
                     'fecha_check_out' => $this->fecha_check_out,
                     'estado' => 'confirmada',
-                    'metodo_pago' => $this->metodo_pago,
-                    'plataforma_id' => $this->plataforma_id,
+                    'total_reserva' => $this->total_reserva,
                 ]
             );
 

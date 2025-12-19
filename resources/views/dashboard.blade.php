@@ -35,7 +35,7 @@ use Carbon\Carbon;
                 ->join('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
                 ->select(
                     DB::raw('DATE(reservas.fecha_reserva) as fecha'),
-                    DB::raw('SUM(habitaciones.precio * DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in)) as total')
+                    DB::raw('SUM(reservas.total_reserva * DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in)) as total')
                 )
                 ->where('reservas.fecha_reserva', '>=', now()->subDays(7))
                 ->whereIn('reservas.estado', ['confirmada', 'completada'])
@@ -127,7 +127,7 @@ use Carbon\Carbon;
                                 ->join('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
                                 ->whereMonth('reservas.fecha_reserva', now()->month)
                                 ->whereIn('reservas.estado', ['confirmada', 'completada'])
-                                ->sum(DB::raw('habitaciones.precio * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)'));
+                                ->sum(DB::raw('reservas.total_reserva * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)'));
                         @endphp
                         <h3 class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                             ${{ number_format($ingresosMes, 2) }}

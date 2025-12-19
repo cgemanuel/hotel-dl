@@ -177,9 +177,10 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <div class="font-bold text-lg text-amber-700 dark:text-amber-400">
-                            ${{ number_format($reserva->total_calculado['total'], 2) }}
+                            ${{ number_format($reserva->total_reserva, 2) }}
                         </div>
                     </td>
+
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <div class="flex flex-col gap-1">
                             <button wire:click="ver({{ $reserva->idreservas }})"

@@ -9,7 +9,7 @@
     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity"
          wire:click="cerrarModalVer"></div>
 
-    <!-- Modal Panel (mismo estilo que Editar) -->
+    <!-- Modal Panel -->
     <div class="relative inline-block align-bottom bg-white dark:bg-zinc-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full mx-4">
 
         <div class="bg-white dark:bg-zinc-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -41,8 +41,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 <!-- Columna 1 -->
-                <div
-                    class="space-y-4 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div class="space-y-4 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                     <h4 class="text-lg font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2">
                         Información del Cliente
                     </h4>
@@ -96,8 +95,7 @@
                 </div>
 
                 <!-- Columna 2 -->
-                <div
-                    class="space-y-4 bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                <div class="space-y-4 bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border border-green-200 dark:border-green-800">
                     <h4 class="text-lg font-semibold text-green-900 dark:text-green-100 flex items-center gap-2">
                         Detalles de la Reserva
                     </h4>
@@ -149,9 +147,21 @@
                     @endif
 
                     @if(!empty($reservaSeleccionada['no_espacio']))
-                    <div>
+                    <div class="bg-white dark:bg-zinc-800 p-3 rounded-lg">
                         <label class="text-xs font-medium">Estacionamiento</label>
-                        <p class="text-sm">Espacio No. {{ $reservaSeleccionada['no_espacio'] }}</p>
+                        <p class="text-sm font-semibold">Espacio No. {{ $reservaSeleccionada['no_espacio'] }}</p>
+
+                        @if(!empty($reservaSeleccionada['tipo_vehiculo']))
+                        <div class="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                            <p class="text-xs text-zinc-600 dark:text-zinc-400">Tipo de Vehículo:</p>
+                            <p class="text-sm font-medium">{{ $reservaSeleccionada['tipo_vehiculo'] }}</p>
+
+                            @if(!empty($reservaSeleccionada['descripcion_vehiculo']))
+                            <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1">Descripción:</p>
+                            <p class="text-sm">{{ $reservaSeleccionada['descripcion_vehiculo'] }}</p>
+                            @endif
+                        </div>
+                        @endif
                     </div>
                     @endif
 
@@ -163,52 +173,30 @@
                     @endif
                 </div>
 
-                <!-- Columna 3 -->
+                <!-- Columna 3 - Total Simple -->
                 <div class="space-y-4">
-                    <div
-                        class="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-
+                    <div class="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
                         <h4 class="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-4">
-                            Desglose de Costos
+                            Costo Total
                         </h4>
 
-                        <div class="space-y-3">
-
-                            <div class="flex justify-between border-b pb-2">
-                                <div>
-                                    <span class="text-sm">Habitación</span><br>
-                                    <span class="text-xs text-zinc-500">
-                                        {{ $reservaSeleccionada['total_dias'] }} noches ×
-                                        ${{ number_format($reservaSeleccionada['total_precio_noche'], 2) }}
-                                    </span>
-                                </div>
-                                <span class="font-semibold">
-                                    ${{ number_format($reservaSeleccionada['total_subtotal'], 2) }}
-                                </span>
-                            </div>
-
-                            @if(($reservaSeleccionada['total_comision_porcentaje'] ?? 0) > 0)
-                            <div class="flex justify-between text-orange-600 dark:text-orange-400 border-b pb-2">
-                                <span class="text-sm">
-                                    Comisión {{ $reservaSeleccionada['nombre_plataforma'] }}
-                                    <span class="block text-xs">
-                                        ({{ $reservaSeleccionada['total_comision_porcentaje'] }}%)
-                                    </span>
-                                </span>
-                                <span class="font-semibold">
-                                    ${{ number_format($reservaSeleccionada['total_monto_comision'], 2) }}
-                                </span>
-                            </div>
-                            @endif
-
-                            <div class="flex justify-between text-lg font-bold bg-amber-100 dark:bg-amber-900/30 p-3 rounded-lg">
-                                <span>Total:</span>
-                                <span class="text-green-600 dark:text-green-400">
-                                    ${{ number_format($reservaSeleccionada['total_final'], 2) }}
-                                </span>
-                            </div>
-
+                        <div class="flex justify-between text-2xl font-bold bg-amber-100 dark:bg-amber-900/30 p-4 rounded-lg">
+                            <span>Total:</span>
+                            <span class="text-green-600 dark:text-green-400">
+                                ${{ number_format($reservaSeleccionada['total_reserva'] ?? 0, 2) }}
+                            </span>
                         </div>
+
+                        @if(!empty($reservaSeleccionada['nombre_plataforma']) && !empty($reservaSeleccionada['comision']))
+                        <div class="mt-3 pt-3 border-t border-amber-200 dark:border-amber-800">
+                            <p class="text-xs text-zinc-600 dark:text-zinc-400">
+                                Plataforma: {{ $reservaSeleccionada['nombre_plataforma'] }}
+                            </p>
+                            <p class="text-xs text-orange-600 dark:text-orange-400">
+                                Comisión: {{ $reservaSeleccionada['comision'] }}%
+                            </p>
+                        </div>
+                        @endif
                     </div>
                 </div>
 

@@ -80,7 +80,7 @@ class CroquisHabitaciones extends Component
                 'habitaciones.idhabitacion',
                 'habitaciones.no_habitacion',
                 'habitaciones.tipo',
-                'habitaciones.precio',
+                //'habitaciones.precio',
                 'habitaciones.estado',
                 'habitaciones.planta',
                 DB::raw('MAX(reservas.idreservas) as reserva_id')
@@ -89,7 +89,7 @@ class CroquisHabitaciones extends Component
                 'habitaciones.idhabitacion',
                 'habitaciones.no_habitacion',
                 'habitaciones.tipo',
-                'habitaciones.precio',
+                //'habitaciones.precio',
                 'habitaciones.estado',
                 'habitaciones.planta'
             )
@@ -122,7 +122,7 @@ class CroquisHabitaciones extends Component
                 'habitaciones.idhabitacion',
                 'habitaciones.no_habitacion',
                 'habitaciones.tipo',
-                'habitaciones.precio',
+                //'habitaciones.precio',
                 'habitaciones.estado',
                 'habitaciones.planta'
             )

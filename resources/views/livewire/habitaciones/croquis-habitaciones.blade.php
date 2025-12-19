@@ -98,7 +98,7 @@
                         <div class="h-full flex flex-col items-center justify-center p-6">
                             <span class="text-5xl font-bold mb-4">{{ $habitacion->no_habitacion }}</span>
                             <h3 class="text-2xl font-semibold capitalize mb-2">{{ $habitacion->tipo }}</h3>
-                            <p class="text-lg opacity-90">${{ number_format($habitacion->precio, 2) }} por noche</p>
+                           {{--<p class="text-lg opacity-90">${{ number_format($habitacion->precio, 2) }} por noche</p>--}}
 
                             <span class="mt-4 px-4 py-2 rounded-full text-sm font-medium capitalize {{ $tagClase }}">
                                 {{ str_replace('_', ' ', $habitacion->estado) }}
@@ -150,7 +150,7 @@
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Precio por Noche</p>
                             <p class="font-semibold text-gray-900 dark:text-white mt-1">
-                                ${{ number_format($habitacionSeleccionada['precio'], 2) }}
+                                {{--${{ number_format($habitacionSeleccionada['precio'], 2) }}--}}
                             </p>
                         </div>
                     </div>

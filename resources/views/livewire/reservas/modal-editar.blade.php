@@ -1,4 +1,4 @@
-<!-- Modal Editar Reserva -->
+<!-- Modal Editar Reserva - ACTUALIZADO CON TOTAL Y VEHÍCULO -->
 @if($mostrarModalEditar)
 <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
      aria-labelledby="modal-title" role="dialog" aria-modal="true"
@@ -9,7 +9,7 @@
     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity"
         wire:click="cerrarModalEditar"></div>
 
-    <!-- Modal Panel - Ampliado a 4xl para layout horizontal -->
+    <!-- Modal Panel -->
     <div class="relative inline-block align-bottom bg-white dark:bg-zinc-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full mx-4">
         <form wire:submit.prevent="actualizarReserva" @submit.prevent>
             <div class="bg-white dark:bg-zinc-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -74,6 +74,17 @@
                                    class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             @error('edit_no_personas') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
+
+                        <!-- Total Reserva -->
+                        <div>
+                            <label for="edit_total_reserva" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                Total de la Reserva *
+                            </label>
+                            <input type="number" id="edit_total_reserva" wire:model="edit_total_reserva" min="0" step="0.01"
+                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="0.00">
+                            @error('edit_total_reserva') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
                     </div>
 
                     <!-- Columna Derecha -->
@@ -130,6 +141,28 @@
                                 @endforeach
                             </select>
                             @error('edit_estacionamiento_no_espacio') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Tipo de Vehículo -->
+                        <div>
+                            <label for="edit_tipo_vehiculo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                Tipo de Vehículo
+                            </label>
+                            <input type="text" id="edit_tipo_vehiculo" wire:model="edit_tipo_vehiculo"
+                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Ej: Sedán, SUV, Camioneta">
+                            @error('edit_tipo_vehiculo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Descripción del Vehículo -->
+                        <div>
+                            <label for="edit_descripcion_vehiculo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                Descripción del Vehículo
+                            </label>
+                            <textarea id="edit_descripcion_vehiculo" wire:model="edit_descripcion_vehiculo" rows="3"
+                                      class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                      placeholder="Ej: Toyota Corolla 2020, color gris, placas ABC-123"></textarea>
+                            @error('edit_descripcion_vehiculo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
