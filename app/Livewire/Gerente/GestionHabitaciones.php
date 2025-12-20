@@ -16,14 +16,12 @@ class GestionHabitaciones extends Component
 
     public $no_habitacion;
     public $tipo;
-    public $precio;
     public $estado;
     public $planta;
 
     protected $rules = [
         'no_habitacion' => 'required|integer|unique:habitaciones,no_habitacion',
         'tipo' => 'required|string|in:individual,doble,suite',
-        'precio' => 'required|numeric|min:0',
         'estado' => 'required|string|in:disponible,ocupada,en_mantenimiento',
         'planta' => 'required|string|in:Planta 1,Planta 2,Planta 3',
     ];
@@ -35,7 +33,7 @@ class GestionHabitaciones extends Component
 
     public function abrirModalCrear()
     {
-        $this->reset(['no_habitacion', 'tipo', 'precio', 'estado', 'planta', 'editando_id']);
+        $this->reset(['no_habitacion', 'tipo', 'estado', 'planta', 'editando_id']);
         $this->mostrarModal = true;
     }
 
@@ -47,7 +45,6 @@ class GestionHabitaciones extends Component
             $this->editando_id = $habitacion->idhabitacion;
             $this->no_habitacion = $habitacion->no_habitacion;
             $this->tipo = $habitacion->tipo;
-            $this->precio = $habitacion->precio;
             $this->estado = $habitacion->estado;
             $this->planta = $habitacion->planta;
             $this->mostrarModal = true;
@@ -60,7 +57,6 @@ class GestionHabitaciones extends Component
             $this->validate([
                 'no_habitacion' => 'required|integer|unique:habitaciones,no_habitacion,' . $this->editando_id . ',idhabitacion',
                 'tipo' => 'required|string|in:individual,doble,suite',
-                'precio' => 'required|numeric|min:0',
                 'estado' => 'required|string|in:disponible,ocupada,en_mantenimiento',
                 'planta' => 'required|string|in:Planta 1,Planta 2,Planta 3',
             ]);
@@ -78,14 +74,12 @@ class GestionHabitaciones extends Component
                     [
                         'no_habitacion' => $habitacionAnterior->no_habitacion,
                         'tipo' => $habitacionAnterior->tipo,
-                        'precio' => $habitacionAnterior->precio,
                         'estado' => $habitacionAnterior->estado,
                         'planta' => $habitacionAnterior->planta,
                     ],
                     [
                         'no_habitacion' => $this->no_habitacion,
                         'tipo' => $this->tipo,
-                        'precio' => $this->precio,
                         'estado' => $this->estado,
                         'planta' => $this->planta,
                     ]
@@ -96,7 +90,6 @@ class GestionHabitaciones extends Component
                     ->update([
                         'no_habitacion' => $this->no_habitacion,
                         'tipo' => $this->tipo,
-                        'precio' => $this->precio,
                         'estado' => $this->estado,
                         'planta' => $this->planta,
                     ]);
@@ -113,7 +106,6 @@ class GestionHabitaciones extends Component
                 $habitacionId = DB::table('habitaciones')->insertGetId([
                     'no_habitacion' => $this->no_habitacion,
                     'tipo' => $this->tipo,
-                    'precio' => $this->precio,
                     'estado' => $this->estado,
                     'planta' => $this->planta,
                 ]);
@@ -125,7 +117,6 @@ class GestionHabitaciones extends Component
                     [
                         'no_habitacion' => $this->no_habitacion,
                         'tipo' => $this->tipo,
-                        'precio' => $this->precio,
                         'estado' => $this->estado,
                         'planta' => $this->planta,
                     ]
@@ -163,7 +154,6 @@ class GestionHabitaciones extends Component
                 [
                     'no_habitacion' => $habitacion->no_habitacion,
                     'tipo' => $habitacion->tipo,
-                    'precio' => $habitacion->precio,
                     'estado' => $habitacion->estado,
                     'planta' => $habitacion->planta,
                 ]
@@ -179,7 +169,7 @@ class GestionHabitaciones extends Component
     public function cerrarModal()
     {
         $this->mostrarModal = false;
-        $this->reset(['no_habitacion', 'tipo', 'precio', 'estado', 'planta', 'editando_id']);
+        $this->reset(['no_habitacion', 'tipo', 'estado', 'planta', 'editando_id']);
         $this->resetErrorBag();
     }
 

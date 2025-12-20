@@ -37,7 +37,6 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">No. Habitación</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Tipo</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Precio</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Estado</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Planta</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Acciones</th>
@@ -51,7 +50,6 @@
                         {{ $habitacion->no_habitacion }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap capitalize">{{ $habitacion->tipo }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${{ number_format($habitacion->precio, 2) }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 py-1 text-xs font-semibold rounded-full
                             {{ $habitacion->estado === 'disponible' ? 'bg-green-100 text-green-800' : '' }}
@@ -116,13 +114,6 @@
                             <option value="suite">Suite</option>
                         </select>
                         @error('tipo') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Precio *</label>
-                        <input type="number" step="0.01" wire:model="precio"
-                               class="w-full px-3 py-2 border rounded-lg dark:bg-zinc-800 dark:border-zinc-600">
-                        @error('precio') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
 
                     <div>

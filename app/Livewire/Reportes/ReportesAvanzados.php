@@ -59,8 +59,8 @@ class ReportesAvanzados extends Component
             ->whereBetween('reservas.fecha_reserva', [$this->fecha_inicio, $this->fecha_fin])
             ->whereIn('reservas.estado', ['confirmada', 'completada'])
             ->select(
-                DB::raw('SUM(habitaciones.precio * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) as subtotal'),
-                DB::raw('SUM((habitaciones.precio * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) * (COALESCE(plat_reserva.comision, 0) / 100)) as comisiones')
+                DB::raw('SUM(reservas.total_reserva) as subtotal'),
+                DB::raw('SUM(reservas.total_reserva * (COALESCE(plat_reserva.comision, 0) / 100)) as comisiones')
             )
             ->first();
 
@@ -73,8 +73,8 @@ class ReportesAvanzados extends Component
             ->select(
                 'habitaciones.tipo',
                 DB::raw('COUNT(DISTINCT reservas.idreservas) as cantidad_reservas'),
-                DB::raw('SUM(habitaciones.precio * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) as ingresos'),
-                DB::raw('AVG(habitaciones.precio * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) as ticket_promedio')
+                DB::raw('SUM(reservas.total_reserva) as ingresos'),
+                DB::raw('AVG(reservas.total_reserva) as ticket_promedio')
             )
             ->groupBy('habitaciones.tipo')
             ->get();
@@ -90,8 +90,8 @@ class ReportesAvanzados extends Component
                 'plat_reserva.nombre_plataforma',
                 'plat_reserva.comision',
                 DB::raw('COUNT(DISTINCT reservas.idreservas) as cantidad_reservas'),
-                DB::raw('SUM(habitaciones.precio * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) as ingresos_brutos'),
-                DB::raw('SUM((habitaciones.precio * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) * (plat_reserva.comision / 100)) as comision_total')
+                DB::raw('SUM(reservas.total_reserva) as ingresos_brutos'),
+                DB::raw('SUM(reservas.total_reserva * (plat_reserva.comision / 100)) as comision_total')
             )
             ->groupBy('plat_reserva.idplat_reserva', 'plat_reserva.nombre_plataforma', 'plat_reserva.comision')
             ->get();
@@ -148,10 +148,10 @@ class ReportesAvanzados extends Component
                 ->whereBetween('reservas.fecha_reserva', [$inicio, $fin])
                 ->whereIn('reservas.estado', ['confirmada', 'completada'])
                 ->select(
-                    DB::raw('COUNT(DISTINCT reservas.idreservas) as total_reservas'),
-                    DB::raw('SUM(habitaciones.precio * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) as ingresos'),
-                    DB::raw('AVG(habitaciones.precio) as precio_promedio'),
-                    DB::raw('AVG(GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) as estancia_promedio')
+                DB::raw('COUNT(DISTINCT reservas.idreservas) as total_reservas'),
+                DB::raw('SUM(reservas.total_reserva) as ingresos'),
+                DB::raw('AVG(reservas.total_reserva) as precio_promedio'),
+                DB::raw('AVG(GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) as estancia_promedio')
                 )
                 ->first();
 
@@ -183,7 +183,7 @@ class ReportesAvanzados extends Component
                 ->whereIn('reservas.estado', ['confirmada', 'completada'])
                 ->select(
                     DB::raw('COUNT(DISTINCT reservas.idreservas) as total_reservas'),
-                    DB::raw('SUM(habitaciones.precio * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) as ingresos')
+                    DB::raw('SUM(reservas.total_reserva) as ingresos')
                 )
                 ->first();
 
@@ -195,8 +195,8 @@ class ReportesAvanzados extends Component
                 ->whereMonth('reservas.fecha_reserva', $mes)
                 ->whereIn('reservas.estado', ['confirmada', 'completada'])
                 ->select(
-                    DB::raw('COUNT(DISTINCT reservas.idreservas) as total_reservas'),
-                    DB::raw('SUM(habitaciones.precio * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)) as ingresos')
+                DB::raw('COUNT(DISTINCT reservas.idreservas) as total_reservas'),
+                DB::raw('SUM(reservas.total_reserva) as ingresos')
                 )
                 ->first();
 

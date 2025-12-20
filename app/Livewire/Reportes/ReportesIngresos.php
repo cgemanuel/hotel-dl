@@ -115,40 +115,8 @@ class ReportesIngresos extends Component
 
     private function calcularTotalReserva($reserva)
     {
-        // Obtener datos de la habitación
-        $habitacion = DB::table('habitaciones_has_reservas')
-            ->join('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
-            ->where('habitaciones_has_reservas.reservas_idreservas', $reserva->idreservas)
-            ->first();
-
-        if (!$habitacion) {
-            return 0;
-        }
-
-        // Calcular días de estancia con mínimo 1 día
-        $checkIn = Carbon::parse($reserva->fecha_check_in);
-        $checkOut = Carbon::parse($reserva->fecha_check_out);
-        $dias = max($checkOut->diffInDays($checkIn), 1);
-
-        // Calcular subtotal
-        $subtotal = ($habitacion->precio ?? 0) * $dias;
-
-        // Obtener comisión si existe
-        $comision = 0;
-        if (!empty($reserva->plat_reserva_idplat_reserva)) {
-            $plataforma = DB::table('plat_reserva')
-                ->where('idplat_reserva', $reserva->plat_reserva_idplat_reserva)
-                ->first();
-
-            if ($plataforma && isset($plataforma->comision)) {
-                $comision = $subtotal * ($plataforma->comision / 100);
-            }
-        }
-
-        // Asegurar que el total nunca sea negativo
-        $total = max($subtotal + $comision, 0);
-
-        return $total;
+        // Usar directamente el campo total_reserva
+        return $reserva->total_reserva ?? 0;
     }
 
 
