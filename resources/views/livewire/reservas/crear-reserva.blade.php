@@ -1,3 +1,5 @@
+<!-- REEMPLAZA TODO EL CÓDIGO DEL ARCHIVO crear-reserva.blade.php CON ESTO: -->
+
 <div>
     @if($mostrarModal)
     <div class="modal-overlay fixed inset-0 overflow-y-auto" style="z-index: 9998;">
@@ -42,9 +44,9 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cliente Existente (opcional)</label>
                                 <select wire:model.live="cliente_id" wire:change="seleccionarCliente"
                                         class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                    <option value="">-- Nuevo Cliente --</option>
+                                    <option value="" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">-- Nuevo Cliente --</option>
                                     @foreach($clientes as $cliente)
-                                        <option value="{{ $cliente->idclientes }}">{{ $cliente->nom_completo }} - {{ $cliente->correo }}</option>
+                                        <option value="{{ $cliente->idclientes }}" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">{{ $cliente->nom_completo }} - {{ $cliente->correo }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -62,12 +64,12 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Identificación *</label>
                                     <select wire:model="tipo_identificacion"
-                                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
+                                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                             @if($cliente_existente) disabled @endif>
-                                        <option value="">Seleccionar</option>
-                                        <option value="INE">INE</option>
-                                        <option value="Pasaporte">Pasaporte</option>
-                                        <option value="Licencia">Licencia</option>
+                                        <option value="" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">Seleccionar</option>
+                                        <option value="INE" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">INE</option>
+                                        <option value="Pasaporte" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">Pasaporte</option>
+                                        <option value="Licencia" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">Licencia</option>
                                     </select>
                                     @error('tipo_identificacion') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
@@ -75,7 +77,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">No. Identificación *</label>
                                     <input type="text" wire:model="no_identificacion"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
                                            @if($cliente_existente) readonly @endif>
                                     @error('no_identificacion') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
@@ -83,7 +85,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Edad *</label>
                                     <input type="number" wire:model="edad"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
                                            @if($cliente_existente) readonly @endif>
                                     @error('edad') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
@@ -91,7 +93,7 @@
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Dirección *</label>
                                     <input type="text" wire:model="direccion"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
                                            @if($cliente_existente) readonly @endif>
                                     @error('direccion') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
@@ -99,7 +101,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estado *</label>
                                     <input type="text" wire:model="estado_origen"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
                                            @if($cliente_existente) readonly @endif>
                                     @error('estado_origen') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
@@ -107,7 +109,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">País *</label>
                                     <input type="text" wire:model="pais_origen"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
                                            @if($cliente_existente) readonly @endif>
                                     @error('pais_origen') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
@@ -115,7 +117,7 @@
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Correo Electrónico *</label>
                                     <input type="email" wire:model="correo"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
                                            @if($cliente_existente) readonly @endif>
                                     @error('correo') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
@@ -133,7 +135,7 @@
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Folio de Reserva *</label>
                                     <input type="text" wire:model="folio"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
                                            placeholder="Ej: RES-20250105-0001">
                                     @error('folio') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
@@ -141,31 +143,31 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha Check-in *</label>
                                     <input type="date" wire:model="fecha_check_in" min="{{ date('Y-m-d') }}"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg">
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
                                     @error('fecha_check_in') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha Check-out *</label>
                                     <input type="date" wire:model="fecha_check_out" min="{{ date('Y-m-d', strtotime('+1 day')) }}"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg">
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
                                     @error('fecha_check_out') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">No. Personas *</label>
                                     <input type="number" wire:model="no_personas" min="1"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg">
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
                                     @error('no_personas') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Habitación *</label>
                                     <select wire:model="habitacion_id"
-                                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg">
-                                        <option value="">Seleccionar</option>
+                                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        <option value="" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">Seleccionar</option>
                                         @foreach($habitaciones as $habitacion)
-                                            <option value="{{ $habitacion->idhabitacion }}">
+                                            <option value="{{ $habitacion->idhabitacion }}" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">
                                                 Hab. {{ $habitacion->no_habitacion }} - {{ $habitacion->tipo }}
                                             </option>
                                         @endforeach
@@ -176,10 +178,10 @@
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Plataforma de Reserva *</label>
                                     <select wire:model="plataforma_id"
-                                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg">
-                                        <option value="">Seleccionar</option>
+                                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        <option value="" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">Seleccionar</option>
                                         @foreach($plataformas as $plataforma)
-                                            <option value="{{ $plataforma->idplat_reserva }}">
+                                            <option value="{{ $plataforma->idplat_reserva }}" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">
                                                 {{ $plataforma->nombre_plataforma }} ({{ $plataforma->comision }}%)
                                             </option>
                                         @endforeach
@@ -190,18 +192,18 @@
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Método de Pago *</label>
                                     <select wire:model.live="metodo_pago"
-                                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg">
-                                        <option value="">Seleccionar...</option>
-                                        <option value="efectivo">Efectivo</option>
-                                        <option value="tarjeta">Tarjeta</option>
-                                        <option value="transferencia">Transferencia</option>
-                                        <option value="combinado">Combinado</option>
+                                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        <option value="" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">Seleccionar...</option>
+                                        <option value="efectivo" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">Efectivo</option>
+                                        <option value="tarjeta" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">Tarjeta</option>
+                                        <option value="transferencia" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">Transferencia</option>
+                                        <option value="combinado" class="text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800">Combinado</option>
                                     </select>
                                     @error('metodo_pago') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
 
                                 <!-- CAMPO TOTAL -->
-                                    <div class="md:col-span-2 bg-white dark:bg-zinc-800 p-4 rounded-lg border-2 border-gray-300 dark:border-zinc-600">
+                                <div class="md:col-span-2 bg-white dark:bg-zinc-800 p-4 rounded-lg border-2 border-gray-300 dark:border-zinc-600">
                                     <label class="block text-sm font-medium text-amber-900 dark:text-amber-100 mb-2">
                                         Total de la Reserva *
                                     </label>
