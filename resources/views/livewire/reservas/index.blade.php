@@ -236,7 +236,7 @@
         </div>
     @endif
 
-    {{-- Modal de Estacionamiento --}}
+    {{-- Modal de Estacionamiento CON VALIDACIÓN DE VEHÍCULO --}}
     @if($mostrarModalEstacionamiento)
     <div class="fixed inset-0 z-[9999] overflow-y-auto" aria-labelledby="modal-estacionamiento" role="dialog" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -270,34 +270,67 @@
                 </div>
 
                 {{-- Body --}}
-                <div class="bg-white dark:bg-zinc-900 px-6 py-4">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Selecciona un espacio disponible
-                    </label>
+                <div class="bg-white dark:bg-zinc-900 px-6 py-4 space-y-4">
+                    {{-- Selector de Espacio --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Selecciona un espacio disponible
+                        </label>
 
-                    <select wire:model="espacio_seleccionado"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="">Sin estacionamiento</option>
-                        @forelse($espacios_disponibles as $espacio)
-                            <option value="{{ $espacio->no_espacio }}">
-                                Espacio {{ $espacio->no_espacio }}
-                                @if($espacio->estado === 'disponible')
-                                    - Disponible
-                                @else
-                                    - Asignado actualmente
-                                @endif
-                            </option>
-                        @empty
-                            <option disabled>No hay espacios disponibles</option>
-                        @endforelse
-                    </select>
+                        <select wire:model.live="espacio_seleccionado"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <option value="">Sin estacionamiento</option>
+                            @forelse($espacios_disponibles as $espacio)
+                                <option value="{{ $espacio->no_espacio }}">
+                                    Espacio {{ $espacio->no_espacio }}
+                                    @if($espacio->estado === 'disponible')
+                                        - Disponible
+                                    @else
+                                        - Asignado actualmente
+                                    @endif
+                                </option>
+                            @empty
+                                <option disabled>No hay espacios disponibles</option>
+                            @endforelse
+                        </select>
 
-                    <div class="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                        <p>Total de espacios: {{ count($espacios_disponibles) }}</p>
-                        @if($espacio_seleccionado)
-                            <p class="text-green-600 dark:text-green-400">Espacio seleccionado: {{ $espacio_seleccionado }}</p>
-                        @endif
+                        <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            <p>Total de espacios: {{ count($espacios_disponibles) }}</p>
+                        </div>
                     </div>
+
+                    {{-- Mostrar campos de vehículo SOLO si hay espacio seleccionado --}}
+                    @if($mostrar_form_vehiculo && $espacio_seleccionado)
+                    <div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-800 space-y-4">
+                        <h5 class="font-semibold text-blue-900 dark:text-blue-100">Datos del Vehículo</h5>
+
+                        {{-- Tipo de Vehículo --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Tipo de Vehículo *
+                            </label>
+                            <input type="text" wire:model="tipo_vehiculo_temp"
+                                placeholder="Ej: Sedán, SUV, Pickup"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
+                            @error('tipo_vehiculo_temp')
+                                <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        {{-- Descripción del Vehículo --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Descripción del Vehículo
+                            </label>
+                            <textarea wire:model="descripcion_vehiculo_temp" rows="2"
+                                    placeholder="Marca, modelo, color, placas, etc."
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"></textarea>
+                            @error('descripcion_vehiculo_temp')
+                                <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    @endif
                 </div>
 
                 {{-- Footer --}}

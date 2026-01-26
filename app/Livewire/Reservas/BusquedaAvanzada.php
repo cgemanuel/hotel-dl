@@ -77,18 +77,33 @@ class BusquedaAvanzada extends Component
                 'clientes.telefono',
                 'plat_reserva.nombre_plataforma',
                 DB::raw('MAX(habitaciones.no_habitacion) as no_habitacion'),
-                DB::raw('MAX(habitaciones.tipo) as tipo_habitacion'),
-                DB::raw('MAX(habitaciones.precio) as precio')
+                DB::raw('MAX(habitaciones.tipo) as tipo_habitacion')
             )
             ->groupBy(
-                'reservas.idreservas', 'reservas.folio', 'reservas.fecha_reserva',
-                'reservas.fecha_check_in', 'reservas.fecha_check_out', 'reservas.no_personas',
-                'reservas.estado', 'reservas.metodo_pago', 'reservas.monto_efectivo',
-                'reservas.monto_tarjeta', 'reservas.monto_transferencia',
-                'reservas.estacionamiento_no_espacio', 'reservas.plat_reserva_idplat_reserva',
-                'reservas.clientes_idclientes', 'reservas.created_by', 'reservas.created_at',
-                'reservas.updated_at', 'reservas.facturacion',
-                'clientes.nom_completo', 'clientes.correo', 'clientes.telefono',
+                'reservas.idreservas',
+                'reservas.folio',
+                'reservas.fecha_reserva',
+                'reservas.fecha_check_in',
+                'reservas.fecha_check_out',
+                'reservas.no_personas',
+                'reservas.estado',
+                'reservas.metodo_pago',
+                'reservas.monto_efectivo',
+                'reservas.monto_tarjeta',
+                'reservas.monto_transferencia',
+                'reservas.total_reserva',
+                'reservas.estacionamiento_no_espacio',
+                'reservas.tipo_vehiculo',
+                'reservas.descripcion_vehiculo',
+                'reservas.plat_reserva_idplat_reserva',
+                'reservas.clientes_idclientes',
+                'reservas.created_by',
+                'reservas.created_at',
+                'reservas.updated_at',
+                'reservas.facturacion',
+                'clientes.nom_completo',
+                'clientes.correo',
+                'clientes.telefono',
                 'plat_reserva.nombre_plataforma'
             );
 

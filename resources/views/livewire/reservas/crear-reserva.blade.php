@@ -187,56 +187,6 @@
                                     @error('plataforma_id') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
 
-                                <!-- 🔥 CHECKBOX: Necesita Estacionamiento -->
-                                <div class="md:col-span-2">
-                                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        <input type="checkbox" wire:model.live="necesita_estacionamiento"
-                                               class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
-                                        Necesita Estacionamiento
-                                    </label>
-                                </div>
-
-                                <!-- 🔥 MOSTRAR SI NECESITA ESTACIONAMIENTO -->
-                                @if($necesita_estacionamiento)
-                                    <div class="md:col-span-2 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                                        <h5 class="font-semibold text-blue-900 dark:text-blue-100 mb-3">Datos del Estacionamiento</h5>
-
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Espacio *</label>
-                                                <select wire:model="espacio_estacionamiento"
-                                                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg">
-                                                    <option value="">Seleccionar espacio</option>
-                                                    @foreach($espacios_estacionamiento as $espacio)
-                                                        <option value="{{ $espacio->no_espacio }}">
-                                                            Espacio {{ $espacio->no_espacio }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                @error('espacio_estacionamiento') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-                                            </div>
-
-                                            @if($espacio_estacionamiento)
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Vehículo *</label>
-                                                    <input type="text" wire:model="tipo_vehiculo"
-                                                           placeholder="Ej: Sedán, SUV, Pickup"
-                                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg">
-                                                    @error('tipo_vehiculo') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-                                                </div>
-
-                                                <div class="md:col-span-2">
-                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Descripción del Vehículo *</label>
-                                                    <textarea wire:model="descripcion_vehiculo" rows="2"
-                                                              placeholder="Marca, modelo, color, placas, etc."
-                                                              class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg"></textarea>
-                                                    @error('descripcion_vehiculo') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endif
-
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Método de Pago *</label>
                                     <select wire:model.live="metodo_pago"
@@ -250,8 +200,8 @@
                                     @error('metodo_pago') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
 
-                                <!-- 🔥 CAMPO TOTAL -->
-                                <div class="md:col-span-2 bg-amber-50 dark:bg-amber-900/10 p-4 rounded-lg border-2 border-amber-300 dark:border-amber-700">
+                                <!-- CAMPO TOTAL -->
+                                    <div class="md:col-span-2 bg-white dark:bg-zinc-800 p-4 rounded-lg border-2 border-gray-300 dark:border-zinc-600">
                                     <label class="block text-sm font-medium text-amber-900 dark:text-amber-100 mb-2">
                                         Total de la Reserva *
                                     </label>
@@ -259,7 +209,7 @@
                                         <span class="text-2xl font-bold text-amber-600 dark:text-amber-400">$</span>
                                         <input type="number" step="0.01" min="0" wire:model="total_reserva"
                                                placeholder="0.00"
-                                               class="flex-1 px-4 py-3 text-xl font-bold border-2 border-amber-300 dark:border-amber-700 rounded-lg bg-white dark:bg-zinc-800 text-amber-900 dark:text-amber-100 focus:ring-2 focus:ring-amber-500">
+                                               class="flex-1 px-4 py-3 text-xl font-bold border-2 border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
                                     </div>
                                     @error('total_reserva') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>

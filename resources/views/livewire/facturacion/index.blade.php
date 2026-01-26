@@ -159,11 +159,13 @@
                     <!-- Botón Enviar Correo -->
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         <div x-data="{
-                            abrirGmail(destinatario, nombre, folio) {
-                                const asunto = 'Factura - Hotel Don Luis - Folio: ' + folio;
+                            abrirGmail(destinatario, nombre, facturacion) {
+                                const asunto = 'Factura - Hotel Don Luis - ' + (facturacion || 'Información de Facturación');
                                 const cuerpo = `Estimado/a ${nombre},
 
-Adjunto encontrará la factura correspondiente a su reserva con folio ${folio}.
+Adjunto encontrará la factura correspondiente a su reserva.
+
+${facturacion ? 'Información de facturación: ' + facturacion : ''}
 
 Saludos cordiales,
 Hotel Don Luis`;
@@ -186,7 +188,7 @@ Hotel Don Luis`;
                         }">
                             <button
                                 type="button"
-                                @click="abrirGmail('{{ $reserva->correo }}', '{{ $reserva->nom_completo }}', '{{ $reserva->folio }}')"
+                                @click="abrirGmail('{{ $reserva->correo }}', '{{ $reserva->nom_completo }}', '{{ $reserva->facturacion ?? 'Sin información de facturación' }}')"
                                 class="inline-flex items-center justify-center p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer"
                                 title="Enviar factura por correo"
                             >

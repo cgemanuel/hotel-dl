@@ -56,7 +56,7 @@
     @if($mostrarModal && $espacioSeleccionado)
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
             @click.self="@this.call('cerrarModal')">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white">
                         Espacio {{ $espacioSeleccionado['numero'] }}
@@ -72,21 +72,20 @@
                 </div>
 
                 <div class="p-6">
+                    <!-- UNA SOLA FILA HORIZONTAL -->
+                    <div class="flex gap-6 overflow-x-auto pb-4">
 
-                    <!-- Grid principal de 3 columnas -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                        <!-- Columna 1: Estado y Controles -->
-                        <div class="space-y-4">
-                            <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                                <h4 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <!-- Tarjeta 1: Estado y Controles -->
+                        <div class="flex-shrink-0 w-80">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border-2 border-blue-300 dark:border-blue-700 h-full">
+                                <h4 class="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2 text-lg">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
                                     Estado
                                 </h4>
-                                
-                                <div class="flex items-center gap-2 mb-4">
+
+                                <div class="flex items-center gap-3 mb-6">
                                     @php
                                         $colorBg = match($espacioSeleccionado['estado']) {
                                             'disponible' => 'bg-green-500',
@@ -94,24 +93,24 @@
                                             default => 'bg-gray-500'
                                         };
                                     @endphp
-                                    <div class="w-4 h-4 rounded {{ $colorBg }}"></div>
-                                    <p class="font-semibold text-gray-900 dark:text-white capitalize">
+                                    <div class="w-6 h-6 rounded-full {{ $colorBg }}"></div>
+                                    <p class="font-bold text-lg text-gray-900 dark:text-white capitalize">
                                         {{ $espacioSeleccionado['estado'] }}
                                     </p>
                                 </div>
 
-                                <div class="space-y-2">
-                                    <p class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Cambiar Estado:</p>
+                                <div class="space-y-3">
+                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Cambiar Estado:</p>
                                     <button
                                         wire:click="cambiarEstadoEspacio({{ $espacioSeleccionado['numero'] }}, 'disponible')"
-                                        class="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-xs"
+                                        class="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
                                         wire:confirm="¿Desea cambiar el estado a Disponible?"
                                     >
                                         Marcar Disponible
                                     </button>
                                     <button
                                         wire:click="cambiarEstadoEspacio({{ $espacioSeleccionado['numero'] }}, 'ocupado')"
-                                        class="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-xs"
+                                        class="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm"
                                         wire:confirm="¿Desea cambiar el estado a Ocupado?"
                                     >
                                         Marcar Ocupado
@@ -119,45 +118,46 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Columna 2: Información de la Reserva -->
+
+                        <!-- Tarjeta 2: Información de la Reserva -->
                         @if($espacioSeleccionado['estado'] === 'ocupado' && $espacioSeleccionado['nom_completo'])
-                            <div class="space-y-4">
-                                <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                                    <h4 class="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex-shrink-0 w-80">
+                                <div class="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border-2 border-blue-300 dark:border-blue-700 h-full">
+                                    <h4 class="font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2 text-lg">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                         </svg>
                                         Reserva
                                     </h4>
 
-                                    <div class="space-y-3">
+                                    <div class="space-y-4">
                                         <div>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">Cliente</p>
-                                            <p class="font-semibold text-sm text-gray-900 dark:text-white mt-1">
+                                            <p class="text-xs text-blue-700 dark:text-blue-300 font-medium">Cliente</p>
+                                            <p class="font-bold text-base text-gray-900 dark:text-white mt-1">
                                                 {{ $espacioSeleccionado['nom_completo'] }}
                                             </p>
                                         </div>
 
                                         @if(isset($espacioSeleccionado['telefono']))
                                         <div>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">Teléfono</p>
-                                            <p class="font-semibold text-sm text-gray-900 dark:text-white mt-1">
+                                            <p class="text-xs text-blue-700 dark:text-blue-300 font-medium">Teléfono</p>
+                                            <p class="font-bold text-base text-gray-900 dark:text-white mt-1">
                                                 {{ $espacioSeleccionado['telefono'] }}
                                             </p>
                                         </div>
                                         @endif
 
-                                        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-blue-200 dark:border-blue-700">
+                                        <div class="grid grid-cols-2 gap-4 pt-3 border-t-2 border-blue-200 dark:border-blue-700">
                                             <div>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">Check-in</p>
-                                                <p class="font-semibold text-sm text-gray-900 dark:text-white mt-1">
+                                                <p class="text-xs text-blue-700 dark:text-blue-300 font-medium">Check-in</p>
+                                                <p class="font-bold text-sm text-gray-900 dark:text-white mt-1">
                                                     {{ \Carbon\Carbon::parse($espacioSeleccionado['fecha_check_in'])->format('d/m/Y') }}
                                                 </p>
                                             </div>
 
                                             <div>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">Check-out</p>
-                                                <p class="font-semibold text-sm text-gray-900 dark:text-white mt-1">
+                                                <p class="text-xs text-blue-700 dark:text-blue-300 font-medium">Check-out</p>
+                                                <p class="font-bold text-sm text-gray-900 dark:text-white mt-1">
                                                     {{ \Carbon\Carbon::parse($espacioSeleccionado['fecha_check_out'])->format('d/m/Y') }}
                                                 </p>
                                             </div>
@@ -166,59 +166,70 @@
                                 </div>
                             </div>
 
-                        {{-- 🔥 NUEVA SECCIÓN: Datos del Vehículo --}}
-                        @php
-                            $reservaConVehiculo = DB::table('reservas')
-                                ->where('estacionamiento_no_espacio', $espacioSeleccionado['numero'])
-                                ->where('estado', 'confirmada')
-                                ->whereNotNull('tipo_vehiculo')
-                                ->first();
-                        @endphp
+                            <!-- Tarjeta 3: Datos del Vehículo -->
+                            @php
+                                $reservaConVehiculo = DB::table('reservas')
+                                    ->where('estacionamiento_no_espacio', $espacioSeleccionado['numero'])
+                                    ->where('estado', 'confirmada')
+                                    ->whereNotNull('tipo_vehiculo')
+                                    ->first();
+                            @endphp
 
-                        @if($reservaConVehiculo)
-                            <hr class="dark:border-gray-700">
+                            @if($reservaConVehiculo)
+                                <div class="flex-shrink-0 w-80">
+                                    <div class="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border-2 border-blue-300 dark:border-blue-700 h-full">
+                                        <h4 class="font-semibold text-amber-900 dark:text-amber-100 mb-4 flex items-center gap-2 text-lg">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            Vehículo
+                                        </h4>
 
-                            <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-                                <h4 class="font-semibold text-amber-900 dark:text-amber-100 mb-3 flex items-center gap-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    Información del Vehículo
-                                </h4>
+                                        <div class="space-y-4">
+                                            @if($reservaConVehiculo->tipo_vehiculo)
+                                            <div>
+                                                <p class="text-xs text-amber-700 dark:text-amber-300 font-medium">Tipo de Vehículo</p>
+                                                <p class="font-bold text-base text-gray-900 dark:text-white mt-1">
+                                                    {{ $reservaConVehiculo->tipo_vehiculo }}
+                                                </p>
+                                            </div>
+                                            @endif
 
-                                <div class="space-y-3">
-                                    @if($reservaConVehiculo->tipo_vehiculo)
-                                    <div>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Tipo de Vehículo</p>
-                                        <p class="font-semibold text-gray-900 dark:text-white mt-1">
-                                            {{ $reservaConVehiculo->tipo_vehiculo }}
+                                            @if($reservaConVehiculo->descripcion_vehiculo)
+                                            <div>
+                                                <p class="text-xs text-amber-700 dark:text-amber-300 font-medium mb-2">Descripción</p>
+                                                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border-2 border-amber-200 dark:border-amber-700">
+                                                    <p class="text-sm text-gray-900 dark:text-white leading-relaxed">
+                                                        {{ $reservaConVehiculo->descripcion_vehiculo }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        @elseif($espacioSeleccionado['estado'] === 'disponible')
+                            <div class="flex-shrink-0 w-80">
+                                <div class="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border-2 border-green-300 dark:border-green-700 h-full flex items-center justify-center">
+                                    <div class="text-center">
+                                        <svg class="w-16 h-16 mx-auto mb-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <p class="text-lg font-bold text-green-700 dark:text-green-400">
+                                            Espacio disponible para reservar
                                         </p>
                                     </div>
-                                    @endif
-
-                                    @if($reservaConVehiculo->descripcion_vehiculo)
-                                    <div>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Descripción</p>
-                                        <p class="text-sm text-gray-900 dark:text-white mt-1 bg-white dark:bg-gray-800 p-3 rounded border border-amber-200 dark:border-amber-700">
-                                            {{ $reservaConVehiculo->descripcion_vehiculo }}
-                                        </p>
-                                    </div>
-                                    @endif
                                 </div>
                             </div>
                         @endif
-
-                    @elseif($espacioSeleccionado['estado'] === 'disponible')
-                        <p class="text-center py-4 text-green-600 dark:text-green-400 font-semibold">
-                            Espacio disponible para reservar
-                        </p>
-                    @endif
+                    </div>
                 </div>
 
-                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 rounded-b-lg">
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 rounded-b-lg border-t-2 border-gray-200 dark:border-gray-600">
                     <button
                         wire:click="cerrarModal"
-                        class="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
+                        class="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition-colors text-base"
                     >
                         Cerrar
                     </button>

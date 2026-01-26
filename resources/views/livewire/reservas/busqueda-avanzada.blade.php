@@ -221,6 +221,7 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Check-in</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Estado</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Plataforma</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Total</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Estacionamiento</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
                 </tr>
@@ -242,11 +243,16 @@
                             <div class="text-xs text-gray-500 dark:text-gray-400">
                                 {{ $reserva->correo }}
                             </div>
+                            @if($reserva->telefono)
+                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                Tel: {{ $reserva->telefono }}
+                            </div>
+                            @endif
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 py-1 text-xs font-medium rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
-                            {{ $reserva->no_habitacion }} - {{ ucfirst($reserva->tipo_habitacion ?? 'N/A') }}
+                            {{ $reserva->no_habitacion ?? 'N/A' }} - {{ ucfirst($reserva->tipo_habitacion ?? 'N/A') }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
@@ -269,17 +275,27 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         {{ $reserva->nombre_plataforma ?? 'N/A' }}
                     </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        ${{ number_format($reserva->total_reserva ?? 0, 2) }}
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         @if($reserva->estacionamiento_no_espacio)
-                            <span class="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                Esp. {{ $reserva->estacionamiento_no_espacio }}
-                            </span>
+                            <div class="flex flex-col items-center">
+                                <span class="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    Esp. {{ $reserva->estacionamiento_no_espacio }}
+                                </span>
+                                @if($reserva->tipo_vehiculo)
+                                <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {{ ucfirst($reserva->tipo_vehiculo) }}
+                                </span>
+                                @endif
+                            </div>
                         @else
                             <span class="text-gray-400 text-xs">-</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <a href="{{ route('reservas.index') }}"
+                        <a href="{{ route('reservas.index') }}?folio={{ $reserva->folio }}"
                            class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
                             Ver Detalles
                         </a>
@@ -287,11 +303,12 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="8" class="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
+                    <td colspan="9" class="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
                         <svg class="mx-auto h-12 w-12 text-zinc-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <p>No se encontraron reservas con los criterios de búsqueda</p>
+                        <p class="text-lg font-medium">No se encontraron reservas con los criterios de búsqueda</p>
+                        <p class="text-sm mt-2">Intenta ajustar los filtros para obtener resultados</p>
                     </td>
                 </tr>
                 @endforelse
