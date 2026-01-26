@@ -27,8 +27,6 @@ class CrearReserva extends Component
     public $fecha_check_out = '';
     public $no_personas = 1;
     public $habitacion_id = '';
-    //public $necesita_estacionamiento = false;
-    //public $espacio_estacionamiento = '';
     public $plataforma_id = '';
 
     // Método de pago
@@ -39,17 +37,10 @@ class CrearReserva extends Component
 
     // Campo para el total de la reserva
     public $total_reserva = 0;
-
-    // Datos del vehículo
-    //public $tipo_vehiculo = '';
-    //public $descripcion_vehiculo = '';
-
     public $clientes = [];
     public $habitaciones = [];
-    //public $espacios_estacionamiento = [];
     public $plataformas = [];
     public $cliente_existente = false;
-
     protected $listeners = ['abrirModal' => 'abrir'];
 
     public function mount()
@@ -70,33 +61,8 @@ class CrearReserva extends Component
 
         $this->plataformas = DB::table('plat_reserva')->get();
 
-        /*
-        if ($this->necesita_estacionamiento) {
-            $this->cargarEstacionamientos();
-        }
-        */
     }
 
-    /*public function cargarEstacionamientos()
-    {
-        $this->espacios_estacionamiento = DB::table('estacionamiento')
-            ->where('estado', 'disponible')
-            ->get();
-    }
-    */
-
-    /*public function updatedNecesitaEstacionamiento($value)
-    {
-        if ($value) {
-            $this->cargarEstacionamientos();
-        } else {
-            $this->espacio_estacionamiento = '';
-            $this->tipo_vehiculo = '';
-            $this->descripcion_vehiculo = '';
-            $this->espacios_estacionamiento = [];
-        }
-    }
-    */
 
     public function abrir()
     {
@@ -163,19 +129,10 @@ class CrearReserva extends Component
             'fecha_check_out' => 'required|date|after:fecha_check_in',
             'no_personas' => 'required|integer|min:1',
             'habitacion_id' => 'required|exists:habitaciones,idhabitacion',
-            //'espacio_estacionamiento' => 'nullable|exists:estacionamiento,no_espacio',
             'plataforma_id' => 'required|exists:plat_reserva,idplat_reserva',
             'metodo_pago' => 'required|in:efectivo,tarjeta,transferencia,combinado',
             'total_reserva' => 'required|numeric|min:0',
         ];
-
-        /*
-        // Si necesita estacionamiento, validar datos del vehículo
-        if ($this->necesita_estacionamiento && $this->espacio_estacionamiento) {
-            $rules['tipo_vehiculo'] = 'required|string|max:100';
-            $rules['descripcion_vehiculo'] = 'required|string|max:500';
-        }
-        */
 
         $this->validate($rules, [
             'folio.required' => 'El folio es obligatorio',
@@ -262,13 +219,6 @@ class CrearReserva extends Component
             DB::table('habitaciones')
                 ->where('idhabitacion', $this->habitacion_id)
                 ->update(['estado' => 'ocupada']);
-            /*
-            if ($this->necesita_estacionamiento && $this->espacio_estacionamiento) {
-                DB::table('estacionamiento')
-                    ->where('no_espacio', $this->espacio_estacionamiento)
-                    ->update(['estado' => 'ocupado']);
-            }
-            */
 
             DB::commit();
 

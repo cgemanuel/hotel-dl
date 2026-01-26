@@ -1,5 +1,4 @@
 <?php
-// app/Livewire/Reservas/Index.php - ACTUALIZADO CON CAMPOS DE VEHÍCULO Y TOTAL
 
 namespace App\Livewire\Reservas;
 

@@ -1,8 +1,12 @@
-<!-- Modal Editar Reserva - ACTUALIZADO CON TOTAL Y VEHÍCULO -->
+<!-- Modal Editar Reserva - CON ACORDEONES -->
 @if($mostrarModalEditar)
 <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
      aria-labelledby="modal-title" role="dialog" aria-modal="true"
-     x-data="{ open: @json($mostrarModalEditar) }"
+     x-data="{
+         open: @json($mostrarModalEditar),
+         seccionFechas: true,
+         seccionEstado: true
+     }"
      @keydown.escape="@this.call('cerrarModalEditar')">
 
     <!-- Overlay -->
@@ -27,142 +31,174 @@
                     </button>
                 </div>
 
-                <!-- Forms en Grid de 2 Columnas -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Columna Izquierda -->
-                    <div class="space-y-4">
-                        <h4 class="text-md font-semibold text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-700 pb-2">
-                            Fechas y Personas
-                        </h4>
+                <!-- Acordeones en Grid de 2 Columnas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- ACORDEÓN 1: Fechas y Personas -->
+                    <div class="border border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden">
+                        <!-- Header del Acordeón -->
+                        <button type="button"
+                                @click="seccionFechas = !seccionFechas"
+                                class="w-full flex items-center justify-between px-4 py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                            <h4 class="text-md font-semibold text-zinc-900 dark:text-zinc-100">
+                                Fechas y Personas
+                            </h4>
+                            <svg class="h-5 w-5 text-zinc-600 dark:text-zinc-400 transition-transform duration-200"
+                                 :class="{ 'rotate-180': seccionFechas }"
+                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
 
-                        <!-- Fecha Reserva -->
-                        <div>
-                            <label for="edit_fecha_reserva" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                Fecha de Reserva *
-                            </label>
-                            <input type="date" id="edit_fecha_reserva" wire:model="edit_fecha_reserva"
-                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            @error('edit_fecha_reserva') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                        <!-- Contenido del Acordeón -->
+                        <div x-show="seccionFechas"
+                             x-collapse
+                             class="px-4 py-4 space-y-4 bg-white dark:bg-zinc-900">
 
-                        <!-- Fecha Check-in -->
-                        <div>
-                            <label for="edit_fecha_check_in" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                Fecha Check-in *
-                            </label>
-                            <input type="date" id="edit_fecha_check_in" wire:model="edit_fecha_check_in"
-                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            @error('edit_fecha_check_in') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                            <!-- Fecha Reserva -->
+                            <div>
+                                <label for="edit_fecha_reserva" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Fecha de Reserva *
+                                </label>
+                                <input type="date" id="edit_fecha_reserva" wire:model="edit_fecha_reserva"
+                                       class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @error('edit_fecha_reserva') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
 
-                        <!-- Fecha Check-out -->
-                        <div>
-                            <label for="edit_fecha_check_out" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                Fecha Check-out *
-                            </label>
-                            <input type="date" id="edit_fecha_check_out" wire:model="edit_fecha_check_out"
-                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            @error('edit_fecha_check_out') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                            <!-- Fecha Check-in -->
+                            <div>
+                                <label for="edit_fecha_check_in" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Fecha Check-in *
+                                </label>
+                                <input type="date" id="edit_fecha_check_in" wire:model="edit_fecha_check_in"
+                                       class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @error('edit_fecha_check_in') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
 
-                        <!-- Número de Personas -->
-                        <div>
-                            <label for="edit_no_personas" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                Número de Personas *
-                            </label>
-                            <input type="number" id="edit_no_personas" wire:model="edit_no_personas" min="1"
-                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            @error('edit_no_personas') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                            <!-- Fecha Check-out -->
+                            <div>
+                                <label for="edit_fecha_check_out" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Fecha Check-out *
+                                </label>
+                                <input type="date" id="edit_fecha_check_out" wire:model="edit_fecha_check_out"
+                                       class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @error('edit_fecha_check_out') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
 
-                        <!-- Total Reserva -->
-                        <div>
-                            <label for="edit_total_reserva" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                Total de la Reserva *
-                            </label>
-                            <input type="number" id="edit_total_reserva" wire:model="edit_total_reserva" min="0" step="0.01"
-                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   placeholder="0.00">
-                            @error('edit_total_reserva') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            <!-- Número de Personas -->
+                            <div>
+                                <label for="edit_no_personas" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Número de Personas *
+                                </label>
+                                <input type="number" id="edit_no_personas" wire:model="edit_no_personas" min="1"
+                                       class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @error('edit_no_personas') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Total Reserva -->
+                            <div>
+                                <label for="edit_total_reserva" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Total de la Reserva *
+                                </label>
+                                <input type="number" id="edit_total_reserva" wire:model="edit_total_reserva" min="0" step="0.01"
+                                       class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="0.00">
+                                @error('edit_total_reserva') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Columna Derecha -->
-                    <div class="space-y-4">
-                        <h4 class="text-md font-semibold text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-700 pb-2">
-                            Estado y Servicios
-                        </h4>
+                    <!-- ACORDEÓN 2: Estado y Servicios -->
+                    <div class="border border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden">
+                        <!-- Header del Acordeón -->
+                        <button type="button"
+                                @click="seccionEstado = !seccionEstado"
+                                class="w-full flex items-center justify-between px-4 py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                            <h4 class="text-md font-semibold text-zinc-900 dark:text-zinc-100">
+                                Estado y Servicios
+                            </h4>
+                            <svg class="h-5 w-5 text-zinc-600 dark:text-zinc-400 transition-transform duration-200"
+                                 :class="{ 'rotate-180': seccionEstado }"
+                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
 
-                        <!-- Estado -->
-                        <div>
-                            <label for="edit_estado" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                Estado *
-                            </label>
-                            <select id="edit_estado" wire:model="edit_estado"
-                                    class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Seleccionar...</option>
-                                <option value="pendiente">Pendiente</option>
-                                <option value="confirmada">Confirmada</option>
-                                <option value="cancelada">Cancelada</option>
-                            </select>
-                            @error('edit_estado') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                        <!-- Contenido del Acordeón -->
+                        <div x-show="seccionEstado"
+                             x-collapse
+                             class="px-4 py-4 space-y-4 bg-white dark:bg-zinc-900">
 
-                        <!-- Cliente (solo lectura) -->
-                        <div>
-                            <label for="edit_cliente_nombre" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                Cliente
-                            </label>
-                            <input type="text"
-                                id="edit_cliente_nombre"
-                                value="{{ $reservaSeleccionada?->nom_completo ?? 'No disponible' }}"
-                                readonly
-                                class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 cursor-not-allowed">
-                        </div>
+                            <!-- Estado -->
+                            <div>
+                                <label for="edit_estado" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Estado *
+                                </label>
+                                <select id="edit_estado" wire:model="edit_estado"
+                                        class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="confirmada">Confirmada</option>
+                                    <option value="cancelada">Cancelada</option>
+                                </select>
+                                @error('edit_estado') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
 
-                        <!-- Estacionamiento con Select -->
-                        <div>
-                            <label for="edit_estacionamiento_no_espacio" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                Espacio de Estacionamiento
-                            </label>
-                            <select id="edit_estacionamiento_no_espacio"
-                                    wire:model="edit_estacionamiento_no_espacio"
-                                    class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Sin estacionamiento</option>
-                                @foreach($espacios_disponibles ?? [] as $espacio)
-                                    <option value="{{ $espacio->no_espacio }}">
-                                        Espacio {{ $espacio->no_espacio }}
-                                        @if($espacio->estado === 'disponible')
-                                            - Disponible
-                                        @else
-                                            - Asignado actualmente
-                                        @endif
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('edit_estacionamiento_no_espacio') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                            <!-- Cliente (solo lectura) -->
+                            <div>
+                                <label for="edit_cliente_nombre" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Cliente
+                                </label>
+                                <input type="text"
+                                    id="edit_cliente_nombre"
+                                    value="{{ $reservaSeleccionada?->nom_completo ?? 'No disponible' }}"
+                                    readonly
+                                    class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 cursor-not-allowed">
+                            </div>
 
-                        <!-- Tipo de Vehículo -->
-                        <div>
-                            <label for="edit_tipo_vehiculo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                Tipo de Vehículo
-                            </label>
-                            <input type="text" id="edit_tipo_vehiculo" wire:model="edit_tipo_vehiculo"
-                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   placeholder="Ej: Sedán, SUV, Camioneta">
-                            @error('edit_tipo_vehiculo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                            <!-- Estacionamiento con Select -->
+                            <div>
+                                <label for="edit_estacionamiento_no_espacio" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Espacio de Estacionamiento
+                                </label>
+                                <select id="edit_estacionamiento_no_espacio"
+                                        wire:model="edit_estacionamiento_no_espacio"
+                                        class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Sin estacionamiento</option>
+                                    @foreach($espacios_disponibles ?? [] as $espacio)
+                                        <option value="{{ $espacio->no_espacio }}">
+                                            Espacio {{ $espacio->no_espacio }}
+                                            @if($espacio->estado === 'disponible')
+                                                - Disponible
+                                            @else
+                                                - Asignado actualmente
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('edit_estacionamiento_no_espacio') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
 
-                        <!-- Descripción del Vehículo -->
-                        <div>
-                            <label for="edit_descripcion_vehiculo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                Descripción del Vehículo
-                            </label>
-                            <textarea id="edit_descripcion_vehiculo" wire:model="edit_descripcion_vehiculo" rows="3"
-                                      class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                      placeholder="Ej: Toyota Corolla 2020, color gris, placas ABC-123"></textarea>
-                            @error('edit_descripcion_vehiculo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            <!-- Tipo de Vehículo -->
+                            <div>
+                                <label for="edit_tipo_vehiculo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Tipo de Vehículo
+                                </label>
+                                <input type="text" id="edit_tipo_vehiculo" wire:model="edit_tipo_vehiculo"
+                                       class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="Ej: Sedán, SUV, Camioneta">
+                                @error('edit_tipo_vehiculo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Descripción del Vehículo -->
+                            <div>
+                                <label for="edit_descripcion_vehiculo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Descripción del Vehículo
+                                </label>
+                                <textarea id="edit_descripcion_vehiculo" wire:model="edit_descripcion_vehiculo" rows="3"
+                                          class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          placeholder="Ej: Toyota Corolla 2020, color gris, placas ABC-123"></textarea>
+                                @error('edit_descripcion_vehiculo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
                         </div>
                     </div>
                 </div>
