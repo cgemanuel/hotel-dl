@@ -26,7 +26,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'telefono' => ['required', 'string', 'max:20'],
-            'rol' => ['required', 'string', 'in:gerente,recepcionista'],
+            'rol' => ['required', 'string', 'in:gerente,recepcionista,superusuario'],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -92,6 +92,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             >
                 <option value="gerente">{{ __('Gerente') }}</option>
                 <option value="recepcionista">{{ __('Recepcionista') }}</option>
+                <option value="superusuario">{{ __('Superusuario') }}</option>
             </select>
         </div>
 

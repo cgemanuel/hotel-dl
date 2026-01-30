@@ -7,9 +7,9 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
 
-class CheckRole
+class CheckSuperuser
 {
-    public function handle(Request $request, Closure $next, string ...$roles): Response
+    public function handle(Request $request, Closure $next): Response
     {
         $user = Auth::user();
 
@@ -17,11 +17,8 @@ class CheckRole
             return redirect()->route('login');
         }
 
-        // Limpia espacios en los roles recibidos
-        $roles = array_map('trim', $roles);
-
-        if (!in_array($user->rol, $roles, true)) {
-            abort(403, 'No tienes permisos para acceder a esta sección.');
+        if ($user->rol !== 'superusuario') {
+            abort(403, 'Acceso restringido: Solo superusuarios pueden acceder a esta sección.');
         }
 
         return $next($request);
