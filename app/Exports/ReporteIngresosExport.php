@@ -13,7 +13,6 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Color;
 
 class ReporteIngresosExport implements FromArray, WithHeadings, WithStyles, WithTitle, ShouldAutoSize, WithEvents
 {
@@ -23,337 +22,239 @@ class ReporteIngresosExport implements FromArray, WithHeadings, WithStyles, With
 
     public function __construct($totales, $fecha_inicio, $fecha_fin)
     {
-        $this->totales = $totales;
+        $this->totales      = $totales;
         $this->fecha_inicio = $fecha_inicio;
-        $this->fecha_fin = $fecha_fin;
+        $this->fecha_fin    = $fecha_fin;
     }
 
-    /**
-     * Retorna los datos del reporte como array
-     */
+    // ─────────────────────────────────────────────────────
+    // MAPA DE FILAS (para mantener estilos sincronizados)
+    //
+    //  1  → Título principal
+    //  2  → Período
+    //  3  → Generado
+    //  4  → Usuario
+    //  5  → (vacía)
+    //  6  → Encabezado tabla: Método | Monto | %
+    //  7  → Efectivo
+    //  8  → Tarjeta de Débito        ← nuevo
+    //  9  → Tarjeta de Crédito       ← nuevo
+    // 10  → Transferencia
+    // 11  → (vacía)
+    // 12  → TOTAL GENERAL
+    // 13  → (vacía)
+    // 14  → (vacía)
+    // 15  → RESUMEN DEL PERÍODO
+    // 16  → (vacía)
+    // 17  → Encabezado resumen: Concepto | Valor
+    // 18  → Total de Reservas Procesadas
+    // 19  → Pagos Combinados (solo si > 0)  ← condicional
+    // 20  → Promedio por Reserva            ← +1 si hay combinado
+    // 21  → (vacía)
+    // 22  → (vacía)
+    // 23  → DISTRIBUCIÓN DETALLADA
+    // 24  → (vacía)
+    // 25  → Encabezado detalle: Método | Monto | % | Cantidad
+    // 26  → Efectivo detalle
+    // 27  → T. Débito detalle
+    // 28  → T. Crédito detalle
+    // 29  → Transferencia detalle
+    // ─────────────────────────────────────────────────────
+
     public function array(): array
     {
-        $data = [];
+        $data  = [];
+        $total = $this->totales['total_general'];
 
-        // Encabezado del reporte
+        // ── Porcentajes ──
+        $pEfectivo   = $total > 0 ? ($this->totales['efectivo']        / $total) * 100 : 0;
+        $pDebito     = $total > 0 ? ($this->totales['tarjeta_debito']  / $total) * 100 : 0;
+        $pCredito    = $total > 0 ? ($this->totales['tarjeta_credito'] / $total) * 100 : 0;
+        $pTransfer   = $total > 0 ? ($this->totales['transferencia']   / $total) * 100 : 0;
+
+        // ── CABECERA ── (filas 1-5)
         $data[] = ['Hotel Don Luis - Reporte de Ingresos por Método de Pago'];
-        $data[] = [
-            'Período: ' . \Carbon\Carbon::parse($this->fecha_inicio)->format('d/m/Y') .
-            ' al ' . \Carbon\Carbon::parse($this->fecha_fin)->format('d/m/Y')
-        ];
+        $data[] = ['Período: ' . \Carbon\Carbon::parse($this->fecha_inicio)->format('d/m/Y') . ' al ' . \Carbon\Carbon::parse($this->fecha_fin)->format('d/m/Y')];
         $data[] = ['Generado: ' . now()->format('d/m/Y H:i')];
         $data[] = ['Usuario: ' . auth()->user()->name];
-        $data[] = []; // Fila vacía
+        $data[] = []; // fila 5 vacía
 
-        // Encabezados de la tabla principal
-        $data[] = ['Método de Pago', 'Monto Total', 'Porcentaje'];
+        // ── TABLA PRINCIPAL ── (filas 6-12)
+        $data[] = ['Método de Pago', 'Monto Total', 'Porcentaje'];                       // fila 6
+        $data[] = ['Efectivo',           '$' . number_format($this->totales['efectivo'],        2), number_format($pEfectivo, 2) . '%']; // 7
+        $data[] = ['Tarjeta de Débito',  '$' . number_format($this->totales['tarjeta_debito'],  2), number_format($pDebito,   2) . '%']; // 8
+        $data[] = ['Tarjeta de Crédito', '$' . number_format($this->totales['tarjeta_credito'], 2), number_format($pCredito,  2) . '%']; // 9
+        $data[] = ['Transferencia',      '$' . number_format($this->totales['transferencia'],   2), number_format($pTransfer, 2) . '%']; // 10
+        $data[] = []; // fila 11 vacía
+        $data[] = ['TOTAL GENERAL', '$' . number_format($total, 2), '100.00%'];           // fila 12
+        $data[] = []; // fila 13
+        $data[] = []; // fila 14
 
-        // Calcular porcentajes
-        $total = $this->totales['total_general'];
-        $porcentajeEfectivo = $total > 0 ? ($this->totales['efectivo'] / $total) * 100 : 0;
-        $porcentajeTarjeta = $total > 0 ? ($this->totales['tarjeta'] / $total) * 100 : 0;
-        $porcentajeTransferencia = $total > 0 ? ($this->totales['transferencia'] / $total) * 100 : 0;
+        // ── RESUMEN ── (filas 15-20+)
+        $data[] = ['RESUMEN DEL PERÍODO'];   // fila 15
+        $data[] = [];                        // fila 16
+        $data[] = ['Concepto', 'Valor'];     // fila 17
+        $data[] = ['Total de Reservas Procesadas', $this->totales['cantidad_reservas']]; // fila 18
 
-        // Datos principales
-        $data[] = [
-            'Efectivo',
-            '$' . number_format($this->totales['efectivo'], 2),
-            number_format($porcentajeEfectivo, 2) . '%'
-        ];
-        $data[] = [
-            'Tarjeta',
-            '$' . number_format($this->totales['tarjeta'], 2),
-            number_format($porcentajeTarjeta, 2) . '%'
-        ];
-        $data[] = [
-            'Transferencia',
-            '$' . number_format($this->totales['transferencia'], 2),
-            number_format($porcentajeTransferencia, 2) . '%'
-        ];
-
-        $data[] = []; // Fila vacía
-
-        // Fila de total
-        $data[] = [
-            'TOTAL GENERAL',
-            '$' . number_format($this->totales['total_general'], 2),
-            '100.00%'
-        ];
-
-        $data[] = []; // Fila vacía
-        $data[] = []; // Fila vacía
-
-        // Sección de Resumen
-        $data[] = ['RESUMEN DEL PERÍODO'];
-        $data[] = []; // Fila vacía
-        $data[] = ['Concepto', 'Valor'];
-        $data[] = ['Total de Reservas Procesadas', $this->totales['cantidad_reservas']];
-
+        $filaPromedio = 19;
         if ($this->totales['combinado'] > 0) {
-            $data[] = [
-                'Pagos Combinados (incluidos en totales)',
-                '$' . number_format($this->totales['combinado'], 2)
-            ];
+            $data[] = ['Pagos Combinados (incluidos en totales)', '$' . number_format($this->totales['combinado'], 2)]; // fila 19
+            $filaPromedio = 20;
         }
 
-        // Promedio por reserva
         $promedio = $this->totales['cantidad_reservas'] > 0
-            ? $this->totales['total_general'] / $this->totales['cantidad_reservas']
+            ? $total / $this->totales['cantidad_reservas']
             : 0;
+        $data[] = ['Promedio por Reserva', '$' . number_format($promedio, 2)]; // fila 19 o 20
+        $data[] = []; // vacía
+        $data[] = []; // vacía
 
-        $data[] = ['Promedio por Reserva', '$' . number_format($promedio, 2)];
+        // ── DISTRIBUCIÓN DETALLADA ──
+        $filaDistTitulo  = $filaPromedio + 3;   // 22 o 23
+        $filaDistVacia   = $filaDistTitulo + 1;
+        $filaDistHeader  = $filaDistVacia + 1;  // 24 o 25
+        $filaDistData    = $filaDistHeader + 1; // 25 o 26
 
-        $data[] = []; // Fila vacía
-        $data[] = []; // Fila vacía
-
-        // Distribución detallada
-        $data[] = ['DISTRIBUCIÓN DETALLADA POR MÉTODO'];
-        $data[] = []; // Fila vacía
+        $data[] = ['DISTRIBUCIÓN DETALLADA POR MÉTODO'];                         // fila dinámica
+        $data[] = [];
         $data[] = ['Método', 'Monto', '% del Total', 'Cantidad Estimada'];
 
-        // Estimamos que cada método tiene una proporción similar de reservas
-        $reservasPorMetodo = $this->totales['cantidad_reservas'] > 0
-            ? [
-                'efectivo' => round($this->totales['cantidad_reservas'] * ($porcentajeEfectivo / 100)),
-                'tarjeta' => round($this->totales['cantidad_reservas'] * ($porcentajeTarjeta / 100)),
-                'transferencia' => round($this->totales['cantidad_reservas'] * ($porcentajeTransferencia / 100)),
-            ]
-            : ['efectivo' => 0, 'tarjeta' => 0, 'transferencia' => 0];
+        $cant = $this->totales['cantidad_reservas'];
+        $data[] = ['Efectivo',           '$' . number_format($this->totales['efectivo'],        2), number_format($pEfectivo, 2) . '%', round($cant * $pEfectivo  / 100) . ' reservas'];
+        $data[] = ['Tarjeta de Débito',  '$' . number_format($this->totales['tarjeta_debito'],  2), number_format($pDebito,   2) . '%', round($cant * $pDebito    / 100) . ' reservas'];
+        $data[] = ['Tarjeta de Crédito', '$' . number_format($this->totales['tarjeta_credito'], 2), number_format($pCredito,  2) . '%', round($cant * $pCredito   / 100) . ' reservas'];
+        $data[] = ['Transferencia',      '$' . number_format($this->totales['transferencia'],   2), number_format($pTransfer, 2) . '%', round($cant * $pTransfer  / 100) . ' reservas'];
 
-        $data[] = [
-            'Efectivo',
-            '$' . number_format($this->totales['efectivo'], 2),
-            number_format($porcentajeEfectivo, 2) . '%',
-            $reservasPorMetodo['efectivo'] . ' reservas'
-        ];
-        $data[] = [
-            'Tarjeta',
-            '$' . number_format($this->totales['tarjeta'], 2),
-            number_format($porcentajeTarjeta, 2) . '%',
-            $reservasPorMetodo['tarjeta'] . ' reservas'
-        ];
-        $data[] = [
-            'Transferencia',
-            '$' . number_format($this->totales['transferencia'], 2),
-            number_format($porcentajeTransferencia, 2) . '%',
-            $reservasPorMetodo['transferencia'] . ' reservas'
-        ];
+        // Guardamos referencias de filas para usarlas en estilos/eventos
+        $this->filaDistTitulo = $filaDistTitulo;
+        $this->filaDistHeader = $filaDistHeader;
+        $this->filaDistData   = $filaDistData;
+        $this->filaPromedio   = $filaPromedio;
 
         return $data;
     }
 
-    /**
-     * Encabezados del documento
-     */
     public function headings(): array
     {
         return [];
     }
 
-    /**
-     * Aplicar estilos al documento
-     */
     public function styles(Worksheet $sheet)
     {
         return [
-            // Estilo del título principal (fila 1)
+            // Título principal
             1 => [
-                'font' => [
-                    'bold' => true,
-                    'size' => 18,
-                    'color' => ['rgb' => '7c3aed'],
-                ],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                ],
+                'font'      => ['bold' => true, 'size' => 18, 'color' => ['rgb' => '7c3aed']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             ],
-
-            // Información del reporte (filas 2-4)
+            // Info del reporte
             2 => ['font' => ['italic' => true, 'size' => 10]],
             3 => ['font' => ['italic' => true, 'size' => 10]],
             4 => ['font' => ['italic' => true, 'size' => 10]],
-
-            // Encabezado de la tabla principal (fila 6)
+            // Encabezado tabla principal (fila 6)
             6 => [
-                'font' => [
-                    'bold' => true,
-                    'color' => ['rgb' => 'FFFFFF'],
-                    'size' => 12,
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '7c3aed'],
-                ],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                ],
+                'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 12],
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '7c3aed']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             ],
-
-            // Fila de TOTAL GENERAL (fila 11)
-            11 => [
-                'font' => [
-                    'bold' => true,
-                    'size' => 14,
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'FEF3C7'],
-                ],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_MEDIUM,
-                        'color' => ['rgb' => '000000'],
-                    ],
-                ],
+            // TOTAL GENERAL (fila 12)
+            12 => [
+                'font'    => ['bold' => true, 'size' => 14],
+                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEF3C7']],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '000000']]],
             ],
-
-            // Título RESUMEN (fila 14)
-            14 => [
-                'font' => [
-                    'bold' => true,
-                    'size' => 14,
-                    'color' => ['rgb' => '7c3aed'],
-                ],
+            // Título RESUMEN (fila 15)
+            15 => [
+                'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '7c3aed']],
             ],
-
-            // Encabezado del resumen (fila 16)
-            16 => [
-                'font' => [
-                    'bold' => true,
-                    'color' => ['rgb' => 'FFFFFF'],
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '9333ea'],
-                ],
-            ],
-
-            // Título DISTRIBUCIÓN DETALLADA (fila 22)
-            22 => [
-                'font' => [
-                    'bold' => true,
-                    'size' => 14,
-                    'color' => ['rgb' => '7c3aed'],
-                ],
-            ],
-
-            // Encabezado distribución detallada (fila 24)
-            24 => [
-                'font' => [
-                    'bold' => true,
-                    'color' => ['rgb' => 'FFFFFF'],
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '9333ea'],
-                ],
+            // Encabezado resumen (fila 17)
+            17 => [
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '9333ea']],
             ],
         ];
     }
 
-    /**
-     * Registrar eventos para aplicar estilos adicionales
-     */
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
-                // Fusionar celdas del título
+                // Fusionar título
                 $sheet->mergeCells('A1:C1');
 
-                // Aplicar bordes a la tabla principal (filas 6-9)
-                $sheet->getStyle('A6:C9')->applyFromArray([
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => Border::BORDER_THIN,
-                            'color' => ['rgb' => 'CCCCCC'],
-                        ],
-                    ],
+                // Bordes tabla principal (filas 6-10: encabezado + 4 métodos)
+                $sheet->getStyle('A6:C10')->applyFromArray([
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
                 ]);
 
-                // Aplicar bordes al resumen (filas 16-19)
-                $lastResumenRow = 17;
-                if ($this->totales['combinado'] > 0) {
-                    $lastResumenRow = 19;
-                }
+                // Colores alternos filas de datos principales
+                // fila 7  Efectivo        → verde
+                $sheet->getStyle('A7:C7')->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F0FDF4']]]);
+                // fila 8  T. Débito       → azul claro
+                $sheet->getStyle('A8:C8')->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EFF6FF']]]);
+                // fila 9  T. Crédito      → índigo claro
+                $sheet->getStyle('A9:C9')->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EEF2FF']]]);
+                // fila 10 Transferencia   → violeta claro
+                $sheet->getStyle('A10:C10')->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FAF5FF']]]);
 
-                $sheet->getStyle("A16:B{$lastResumenRow}")->applyFromArray([
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => Border::BORDER_THIN,
-                            'color' => ['rgb' => 'CCCCCC'],
-                        ],
-                    ],
+                // Encabezado RESUMEN (fila 17)
+                $sheet->getStyle('A17:B17')->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '9333ea']],
                 ]);
 
-                // Aplicar bordes a la distribución detallada (filas 24-27)
-                $sheet->getStyle('A24:D27')->applyFromArray([
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => Border::BORDER_THIN,
-                            'color' => ['rgb' => 'CCCCCC'],
-                        ],
-                    ],
+                // Bordes resumen
+                $lastResumen = isset($this->filaPromedio) ? $this->filaPromedio : 19;
+                $sheet->getStyle("A17:B{$lastResumen}")->applyFromArray([
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
                 ]);
 
-                // Alternar colores en filas de datos principales
-                $sheet->getStyle('A7:C7')->applyFromArray([
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'F0FDF4'],
-                    ],
+                // Título DISTRIBUCIÓN DETALLADA
+                $filaDistTitulo = isset($this->filaDistTitulo) ? $this->filaDistTitulo : 23;
+                $filaDistHeader = isset($this->filaDistHeader) ? $this->filaDistHeader : 25;
+                $filaDistData   = isset($this->filaDistData)   ? $this->filaDistData   : 26;
+
+                $sheet->getStyle("A{$filaDistTitulo}")->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '7c3aed']],
                 ]);
 
-                $sheet->getStyle('A8:C8')->applyFromArray([
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'EFF6FF'],
-                    ],
+                // Encabezado distribución
+                $sheet->getStyle("A{$filaDistHeader}:D{$filaDistHeader}")->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '9333ea']],
                 ]);
 
-                $sheet->getStyle('A9:C9')->applyFromArray([
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'FAF5FF'],
-                    ],
+                // Bordes distribución (4 filas de datos)
+                $lastDist = $filaDistData + 3;
+                $sheet->getStyle("A{$filaDistHeader}:D{$lastDist}")->applyFromArray([
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
                 ]);
 
-                // Alternar colores en distribución detallada
-                $sheet->getStyle('A25:D25')->applyFromArray([
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'F9FAFB'],
-                    ],
+                // Colores alternos distribución detallada
+                $sheet->getStyle("A{$filaDistData}:D{$filaDistData}")->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F0FDF4']]]);
+                $r1 = $filaDistData + 1;
+                $sheet->getStyle("A{$r1}:D{$r1}")->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EFF6FF']]]);
+                $r2 = $filaDistData + 2;
+                $sheet->getStyle("A{$r2}:D{$r2}")->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EEF2FF']]]);
+                $r3 = $filaDistData + 3;
+                $sheet->getStyle("A{$r3}:D{$r3}")->applyFromArray(['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FAF5FF']]]);
+
+                // Centrar columnas numéricas
+                $sheet->getStyle("B6:C{$lastDist}")->applyFromArray([
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                 ]);
 
-                $sheet->getStyle('A27:D27')->applyFromArray([
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'F9FAFB'],
-                    ],
-                ]);
-
-                // Centrar contenido de columnas numéricas
-                $sheet->getStyle('B6:C27')->applyFromArray([
-                    'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    ],
-                ]);
-
-                // Ajustar anchos de columnas
+                // Anchos de columna
                 $sheet->getColumnDimension('A')->setWidth(35);
-                $sheet->getColumnDimension('B')->setWidth(20);
+                $sheet->getColumnDimension('B')->setWidth(22);
                 $sheet->getColumnDimension('C')->setWidth(18);
-                $sheet->getColumnDimension('D')->setWidth(20);
+                $sheet->getColumnDimension('D')->setWidth(22);
             },
         ];
     }
 
-    /**
-     * Título de la hoja
-     */
     public function title(): string
     {
         return 'Reporte de Ingresos';

@@ -5,7 +5,6 @@ use Carbon\Carbon;
 
 <x-layouts.app :title="__('DASHBOARD')">
     <div class="p-6 lg:p-8">
-        <!-- Header -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
             <p class="text-gray-600 dark:text-gray-400">Bienvenido al panel de control del Hotel Don Luis</p>
@@ -21,35 +20,50 @@ use Carbon\Carbon;
                 ->whereDate('updated_at', now())
                 ->count();
 
-            // ALERTAS: Reservas próximas a check-out (hoy y mañana)
+            // ALERTAS: Reservas próximas a check-out (HOY)
+            // MODIFICADO: Se cambió telefono por correo
             $reservasCheckOutHoy = DB::table('reservas')
-                ->join('clientes', 'reservas.clientes_idcliente', '=', 'clientes.idcliente')
+                ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
                 ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
                 ->join('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
                 ->select(
-                    'reservas.*',
+                    'reservas.idreservas',
+                    'reservas.fecha_check_out',
                     'clientes.nom_completo',
-                    'clientes.telefono',
-                    DB::raw('GROUP_CONCAT(habitaciones.numero_habitacion SEPARATOR ", ") as habitaciones')
+                    'clientes.correo',
+                    DB::raw('GROUP_CONCAT(habitaciones.no_habitacion SEPARATOR ", ") as habitaciones')
                 )
                 ->whereDate('reservas.fecha_check_out', now())
                 ->where('reservas.estado', 'confirmada')
-                ->groupBy('reservas.idreservas', 'clientes.nom_completo', 'clientes.telefono')
+                ->groupBy(
+                    'reservas.idreservas',
+                    'reservas.fecha_check_out',
+                    'clientes.nom_completo',
+                    'clientes.correo'
+                )
                 ->get();
 
+            // ALERTAS: Reservas próximas a check-out (MAÑANA)
+            // MODIFICADO: Se cambió telefono por correo
             $reservasCheckOutManana = DB::table('reservas')
-                ->join('clientes', 'reservas.clientes_idcliente', '=', 'clientes.idcliente')
+                ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
                 ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
                 ->join('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
                 ->select(
-                    'reservas.*',
+                    'reservas.idreservas',
+                    'reservas.fecha_check_out',
                     'clientes.nom_completo',
-                    'clientes.telefono',
-                    DB::raw('GROUP_CONCAT(habitaciones.numero_habitacion SEPARATOR ", ") as habitaciones')
+                    'clientes.correo',
+                    DB::raw('GROUP_CONCAT(habitaciones.no_habitacion SEPARATOR ", ") as habitaciones')
                 )
                 ->whereDate('reservas.fecha_check_out', now()->addDay())
                 ->where('reservas.estado', 'confirmada')
-                ->groupBy('reservas.idreservas', 'clientes.nom_completo', 'clientes.telefono')
+                ->groupBy(
+                    'reservas.idreservas',
+                    'reservas.fecha_check_out',
+                    'clientes.nom_completo',
+                    'clientes.correo'
+                )
                 ->get();
 
             // Datos para gráficos
@@ -71,9 +85,7 @@ use Carbon\Carbon;
                 ->get();
         @endphp
 
-        <!-- Tarjetas de resumen -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Habitaciones Ocupadas -->
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border-l-4 border-green-500 p-6 hover:shadow-xl transition-shadow">
                 <div class="flex items-center justify-between">
                     <div>
@@ -93,7 +105,6 @@ use Carbon\Carbon;
                 </div>
             </div>
 
-            <!-- Reservas de Hoy -->
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border-l-4 border-blue-500 p-6 hover:shadow-xl transition-shadow">
                 <div class="flex items-center justify-between">
                     <div>
@@ -109,7 +120,6 @@ use Carbon\Carbon;
                 </div>
             </div>
 
-            <!-- Liberadas Hoy -->
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border-l-4 border-amber-500 p-6 hover:shadow-xl transition-shadow">
                 <div class="flex items-center justify-between">
                     <div>
@@ -125,18 +135,16 @@ use Carbon\Carbon;
                 </div>
             </div>
 
-            <!-- Ingresos del Mes -->
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border-l-4 border-purple-500 p-6 hover:shadow-xl transition-shadow">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400 font-medium">Ingresos del Mes</p>
                         @php
                             $ingresosMes = DB::table('reservas')
-                                ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
-                                ->join('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
-                                ->whereMonth('reservas.fecha_reserva', now()->month)
-                                ->whereIn('reservas.estado', ['confirmada', 'completada'])
-                                ->sum(DB::raw('reservas.total_reserva * GREATEST(DATEDIFF(reservas.fecha_check_out, reservas.fecha_check_in), 1)'));
+                                ->whereMonth('fecha_reserva', now()->month)
+                                ->whereYear('fecha_reserva', now()->year)
+                                ->whereIn('estado', ['confirmada', 'completada'])
+                                ->sum('total_reserva');
                         @endphp
                         <h3 class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                             ${{ number_format($ingresosMes, 2) }}
@@ -152,9 +160,7 @@ use Carbon\Carbon;
             </div>
         </div>
 
-        <!-- Sistema de Alertas -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <!-- Check-out HOY -->
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6 border-l-4 border-red-500">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -186,12 +192,12 @@ use Carbon\Carbon;
                                 <div>
                                     <p class="text-gray-500 dark:text-gray-400">Check-out:</p>
                                     <p class="font-medium text-gray-900 dark:text-white">
-                                        {{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y H:i') }}
+                                        {{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
                                     </p>
                                 </div>
                                 <div>
-                                    <p class="text-gray-500 dark:text-gray-400">Teléfono:</p>
-                                    <p class="font-medium text-gray-900 dark:text-white">{{ $reserva->telefono }}</p>
+                                    <p class="text-gray-500 dark:text-gray-400">Correo:</p>
+                                    <p class="font-medium text-gray-900 dark:text-white break-all">{{ $reserva->correo }}</p>
                                 </div>
                             </div>
                         </div>
@@ -206,7 +212,6 @@ use Carbon\Carbon;
                 </div>
             </div>
 
-            <!-- Check-out MAÑANA -->
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6 border-l-4 border-amber-500">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -238,12 +243,12 @@ use Carbon\Carbon;
                                 <div>
                                     <p class="text-gray-500 dark:text-gray-400">Check-out:</p>
                                     <p class="font-medium text-gray-900 dark:text-white">
-                                        {{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y H:i') }}
+                                        {{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
                                     </p>
                                 </div>
                                 <div>
-                                    <p class="text-gray-500 dark:text-gray-400">Teléfono:</p>
-                                    <p class="font-medium text-gray-900 dark:text-white">{{ $reserva->telefono }}</p>
+                                    <p class="text-gray-500 dark:text-gray-400">Correo:</p>
+                                    <p class="font-medium text-gray-900 dark:text-white break-all">{{ $reserva->correo }}</p>
                                 </div>
                             </div>
                         </div>
@@ -259,22 +264,18 @@ use Carbon\Carbon;
             </div>
         </div>
 
-        <!-- Gráficos -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <!-- Gráfico: Reservas por Estado -->
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Reservas por Estado (Últimos 30 días)</h3>
                 <canvas id="reservasPorEstadoChart"></canvas>
             </div>
 
-            <!-- Gráfico: Ocupación por Tipo -->
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ocupación por Tipo de Habitación</h3>
                 <canvas id="ocupacionPorTipoChart"></canvas>
             </div>
         </div>
 
-        <!-- Scripts de Chart.js -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
         <script>
             // Configuración de colores según el tema

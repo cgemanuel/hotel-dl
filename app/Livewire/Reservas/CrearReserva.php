@@ -13,10 +13,7 @@ class CrearReserva extends Component
     public $cliente_id = '';
     public $nom_completo = '';
     public $tipo_identificacion = '';
-    public $no_identificacion = '';
     public $direccion = '';
-    public $edad = '';
-    public $estado_origen = '';
     public $pais_origen = 'México';
     public $correo = '';
 
@@ -35,12 +32,12 @@ class CrearReserva extends Component
     public $monto_tarjeta = 0;
     public $monto_transferencia = 0;
 
-    // Campo para el total de la reserva
     public $total_reserva = 0;
     public $clientes = [];
     public $habitaciones = [];
     public $plataformas = [];
     public $cliente_existente = false;
+
     protected $listeners = ['abrirModal' => 'abrir'];
 
     public function mount()
@@ -60,19 +57,17 @@ class CrearReserva extends Component
             ->get();
 
         $this->plataformas = DB::table('plat_reserva')->get();
-
     }
-
 
     public function abrir()
     {
         $this->mostrarModal = true;
         $this->reset([
-            'nom_completo', 'tipo_identificacion', 'no_identificacion',
-            'direccion', 'edad', 'estado_origen', 'correo',
+            'nom_completo', 'tipo_identificacion',
+            'direccion', 'correo',
             'fecha_check_in', 'fecha_check_out', 'no_personas',
-            'habitacion_id',
-            'plataforma_id', 'metodo_pago', 'monto_efectivo', 'monto_tarjeta', 'monto_transferencia',
+            'habitacion_id', 'plataforma_id', 'metodo_pago',
+            'monto_efectivo', 'monto_tarjeta', 'monto_transferencia',
             'total_reserva', 'folio'
         ]);
         $this->cliente_existente = false;
@@ -93,60 +88,48 @@ class CrearReserva extends Component
                 ->first();
 
             if ($cliente) {
-                $this->nom_completo = $cliente->nom_completo;
+                $this->nom_completo       = $cliente->nom_completo;
                 $this->tipo_identificacion = $cliente->tipo_identificacion;
-                $this->no_identificacion = $cliente->no_identificacion;
-                $this->direccion = $cliente->direccion;
-                $this->edad = $cliente->edad;
-                $this->estado_origen = $cliente->estado_origen;
-                $this->pais_origen = $cliente->pais_origen;
-                $this->correo = $cliente->correo;
-                $this->cliente_existente = true;
+                $this->direccion          = $cliente->direccion;
+                $this->pais_origen        = $cliente->pais_origen;
+                $this->correo             = $cliente->correo;
+                $this->cliente_existente  = true;
             }
         } else {
             $this->cliente_existente = false;
-            $this->reset([
-                'nom_completo', 'tipo_identificacion', 'no_identificacion',
-                'direccion', 'edad', 'estado_origen', 'correo'
-            ]);
+            $this->reset(['nom_completo', 'tipo_identificacion', 'direccion', 'correo']);
             $this->pais_origen = 'México';
         }
     }
 
     public function guardar()
     {
-        $rules = [
-            'folio' => 'required|string|max:50|unique:reservas,folio',
-            'nom_completo' => 'required|min:3',
+        $this->validate([
+            'folio'               => 'required|string|max:50|unique:reservas,folio',
+            'nom_completo'        => 'required|min:3',
             'tipo_identificacion' => 'required',
-            'no_identificacion' => 'required',
-            'direccion' => 'required',
-            'edad' => 'required|integer|min:18',
-            'estado_origen' => 'required',
-            'pais_origen' => 'required',
-            'correo' => 'required|email',
-            'fecha_check_in' => 'required|date|after_or_equal:today',
-            'fecha_check_out' => 'required|date|after:fecha_check_in',
-            'no_personas' => 'required|integer|min:1',
-            'habitacion_id' => 'required|exists:habitaciones,idhabitacion',
-            'plataforma_id' => 'required|exists:plat_reserva,idplat_reserva',
-            'metodo_pago' => 'required|in:efectivo,tarjeta,transferencia,combinado',
-            'total_reserva' => 'required|numeric|min:0',
-        ];
-
-        $this->validate($rules, [
-            'folio.required' => 'El folio es obligatorio',
-            'folio.unique' => 'Este folio ya existe',
-            'nom_completo.required' => 'El nombre completo es obligatorio',
+            'direccion'           => 'required',
+            'pais_origen'         => 'required',
+            'correo'              => 'required|email',
+            'fecha_check_in'      => 'required|date|after_or_equal:today',
+            'fecha_check_out'     => 'required|date|after:fecha_check_in',
+            'no_personas'         => 'required|integer|min:1',
+            'habitacion_id'       => 'required|exists:habitaciones,idhabitacion',
+            'plataforma_id'       => 'required|exists:plat_reserva,idplat_reserva',
+            // ── Nuevos métodos de pago incluidos ──
+            'metodo_pago'         => 'required|in:efectivo,tarjeta_debito,tarjeta_credito,transferencia,combinado',
+            'total_reserva'       => 'required|numeric|min:0',
+        ], [
+            'folio.required'               => 'El folio es obligatorio',
+            'folio.unique'                 => 'Este folio ya existe',
+            'nom_completo.required'        => 'El nombre completo es obligatorio',
             'tipo_identificacion.required' => 'Seleccione un tipo de identificación',
-            'fecha_check_in.after_or_equal' => 'La fecha de check-in no puede ser anterior a hoy',
-            'fecha_check_out.after' => 'La fecha de check-out debe ser posterior al check-in',
-            'edad.min' => 'El cliente debe ser mayor de edad',
-            'metodo_pago.required' => 'Debe seleccionar un método de pago',
-            'total_reserva.required' => 'Debe ingresar el total de la reserva',
-            'total_reserva.min' => 'El total debe ser mayor a 0',
-            'tipo_vehiculo.required' => 'El tipo de vehículo es obligatorio',
-            'descripcion_vehiculo.required' => 'La descripción del vehículo es obligatoria',
+            'fecha_check_in.after_or_equal'=> 'La fecha de check-in no puede ser anterior a hoy',
+            'fecha_check_out.after'        => 'La fecha de check-out debe ser posterior al check-in',
+            'metodo_pago.required'         => 'Debe seleccionar un método de pago',
+            'metodo_pago.in'               => 'Método de pago no válido',
+            'total_reserva.required'       => 'Debe ingresar el total de la reserva',
+            'total_reserva.min'            => 'El total debe ser mayor a 0',
         ]);
 
         if ($this->metodo_pago === 'combinado') {
@@ -162,58 +145,53 @@ class CrearReserva extends Component
 
             if (!$this->cliente_existente) {
                 $this->cliente_id = DB::table('clientes')->insertGetId([
-                    'nom_completo' => $this->nom_completo,
+                    'nom_completo'        => $this->nom_completo,
                     'tipo_identificacion' => $this->tipo_identificacion,
-                    'no_identificacion' => $this->no_identificacion,
-                    'direccion' => $this->direccion,
-                    'edad' => $this->edad,
-                    'estado_origen' => $this->estado_origen,
-                    'pais_origen' => $this->pais_origen,
-                    'telefono' => '0000000000',
-                    'correo' => $this->correo,
+                    'no_identificacion'   => null,
+                    'direccion'           => $this->direccion,
+                    'edad'                => null,
+                    'estado_origen'       => null,
+                    'pais_origen'         => $this->pais_origen,
+                    'telefono'            => '0000000000',
+                    'correo'              => $this->correo,
                 ]);
             }
 
             $reserva_id = DB::table('reservas')->insertGetId([
-                'folio' => $this->folio,
-                'fecha_reserva' => $this->fecha_reserva,
-                'fecha_check_in' => $this->fecha_check_in,
-                'fecha_check_out' => $this->fecha_check_out,
-                'no_personas' => $this->no_personas,
-                'estado' => 'confirmada',
-                'metodo_pago' => $this->metodo_pago,
-                'monto_efectivo' => $this->monto_efectivo ?? 0,
-                'monto_tarjeta' => $this->monto_tarjeta ?? 0,
-                'monto_transferencia' => $this->monto_transferencia ?? 0,
-                'total_reserva' => $this->total_reserva,
-                'clientes_idclientes' => $this->cliente_id,
-                'estacionamiento_no_espacio' => null,
-                'tipo_vehiculo' => null,
-                'descripcion_vehiculo' => null,
+                'folio'                       => $this->folio,
+                'fecha_reserva'               => $this->fecha_reserva,
+                'fecha_check_in'              => $this->fecha_check_in,
+                'fecha_check_out'             => $this->fecha_check_out,
+                'no_personas'                 => $this->no_personas,
+                'estado'                      => 'confirmada',
+                'metodo_pago'                 => $this->metodo_pago,
+                'monto_efectivo'              => $this->monto_efectivo ?? 0,
+                'monto_tarjeta'               => $this->monto_tarjeta ?? 0,
+                'monto_transferencia'         => $this->monto_transferencia ?? 0,
+                'total_reserva'               => $this->total_reserva,
+                'clientes_idclientes'         => $this->cliente_id,
+                'estacionamiento_no_espacio'  => null,
+                'tipo_vehiculo'               => null,
+                'descripcion_vehiculo'        => null,
                 'plat_reserva_idplat_reserva' => $this->plataforma_id,
-                'created_by' => auth()->id(),
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_by'                  => auth()->id(),
+                'created_at'                  => now(),
+                'updated_at'                  => now(),
             ]);
 
-            // AUDITORÍA
-            \App\Services\AuditService::logCreated(
-                'Reserva',
-                $reserva_id,
-                [
-                    'folio' => $this->folio,
-                    'cliente_id' => $this->cliente_id,
-                    'habitacion_id' => $this->habitacion_id,
-                    'fecha_check_in' => $this->fecha_check_in,
-                    'fecha_check_out' => $this->fecha_check_out,
-                    'estado' => 'confirmada',
-                    'total_reserva' => $this->total_reserva,
-                ]
-            );
+            \App\Services\AuditService::logCreated('Reserva', $reserva_id, [
+                'folio'          => $this->folio,
+                'cliente_id'     => $this->cliente_id,
+                'habitacion_id'  => $this->habitacion_id,
+                'fecha_check_in' => $this->fecha_check_in,
+                'fecha_check_out'=> $this->fecha_check_out,
+                'estado'         => 'confirmada',
+                'total_reserva'  => $this->total_reserva,
+            ]);
 
             DB::table('habitaciones_has_reservas')->insert([
                 'habitaciones_idhabitacion' => $this->habitacion_id,
-                'reservas_idreservas' => $reserva_id,
+                'reservas_idreservas'       => $reserva_id,
             ]);
 
             DB::table('habitaciones')

@@ -12,7 +12,13 @@
         </div>
     @endif
 
-    <!-- Panel de Configuración del Reporte -->
+    @if (session()->has('error'))
+        <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/20 border-l-4 border-red-600 text-red-800 dark:text-red-200 rounded-lg">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <!-- Panel de Configuración -->
     <div class="mb-6 bg-purple-50 dark:bg-purple-900/10 p-6 rounded-lg border-2 border-purple-200 dark:border-purple-800">
         <h3 class="text-lg font-semibold text-purple-900 dark:text-purple-100 mb-4">
             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,47 +26,33 @@
             </svg>
             Configuración del Reporte
         </h3>
-
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Tipo de Reporte -->
             <div>
-                <label class="block text-sm font-medium text-purple-800 dark:text-purple-200 mb-2">
-                    Tipo de Reporte *
-                </label>
+                <label class="block text-sm font-medium text-purple-800 dark:text-purple-200 mb-2">Tipo de Reporte *</label>
                 <select wire:model.live="tipo_reporte"
                         class="w-full px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500">
                     <option value="metodos_pago">Ingresos por Método de Pago</option>
                     <option value="reservas_usuario">Reservas por Recepcionista</option>
                 </select>
             </div>
-
-            <!-- Fecha Inicio -->
             <div>
-                <label class="block text-sm font-medium text-purple-800 dark:text-purple-200 mb-2">
-                    Fecha Inicio *
-                </label>
+                <label class="block text-sm font-medium text-purple-800 dark:text-purple-200 mb-2">Fecha Inicio *</label>
                 <input type="date" wire:model="fecha_inicio"
                        class="w-full px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500">
                 @error('fecha_inicio') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
-
-            <!-- Fecha Fin -->
             <div>
-                <label class="block text-sm font-medium text-purple-800 dark:text-purple-200 mb-2">
-                    Fecha Fin *
-                </label>
+                <label class="block text-sm font-medium text-purple-800 dark:text-purple-200 mb-2">Fecha Fin *</label>
                 <input type="date" wire:model="fecha_fin"
                        class="w-full px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500">
                 @error('fecha_fin') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
         </div>
-
-        <div class="flex gap-3 mt-6">
+        <div class="flex flex-wrap gap-3 mt-6">
             <button wire:click="generarReporte"
                     class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors">
                 Generar Reporte
             </button>
-
             @if($reporte_generado)
             <button wire:click="limpiarReporte"
                     class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
@@ -84,13 +76,13 @@
         </div>
     </div>
 
-    <!-- Reporte: Métodos de Pago -->
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- Reporte: Métodos de Pago                       -->
+    <!-- ══════════════════════════════════════════════ -->
     @if($reporte_generado && $tipo_reporte === 'metodos_pago')
     <div class="bg-white dark:bg-zinc-900 rounded-lg border-2 border-purple-200 dark:border-purple-800 shadow-lg overflow-hidden">
         <div class="bg-purple-800 dark:bg-purple-900 px-6 py-4">
-            <h3 class="text-xl font-bold text-white">
-                Concentrado de Ingresos por Método de Pago
-            </h3>
+            <h3 class="text-xl font-bold text-white">Concentrado de Ingresos por Método de Pago</h3>
             <p class="text-purple-200 text-sm mt-1">
                 Del {{ \Carbon\Carbon::parse($fecha_inicio)->format('d/m/Y') }}
                 al {{ \Carbon\Carbon::parse($fecha_fin)->format('d/m/Y') }}
@@ -98,68 +90,84 @@
         </div>
 
         <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {{-- Grid de 5 columnas en pantallas grandes, 2 en medianas --}}
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+
                 <!-- Efectivo -->
-                <div class="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border-2 border-green-200 dark:border-green-800">
+                <div class="bg-green-50 dark:bg-green-900/20 p-5 rounded-lg border-2 border-green-200 dark:border-green-800">
                     <div class="flex items-center justify-between mb-2">
-                        <h4 class="text-sm font-semibold text-green-800 dark:text-green-200">EFECTIVO</h4>
-                        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <h4 class="text-xs font-bold text-green-800 dark:text-green-200 uppercase tracking-wide">Efectivo</h4>
+                        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
                         </svg>
                     </div>
-                    <p class="text-3xl font-bold text-green-700 dark:text-green-300">
+                    <p class="text-2xl font-bold text-green-700 dark:text-green-300">
                         ${{ number_format($totales_metodos['efectivo'], 2) }}
                     </p>
                 </div>
 
-                <!-- Tarjeta -->
-                <div class="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                <!-- Tarjeta de Débito -->
+                <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-lg border-2 border-blue-200 dark:border-blue-800">
                     <div class="flex items-center justify-between mb-2">
-                        <h4 class="text-sm font-semibold text-blue-800 dark:text-blue-200">TARJETA</h4>
-                        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <h4 class="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase tracking-wide">T. Débito</h4>
+                        <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
                             <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/>
                         </svg>
                     </div>
-                    <p class="text-3xl font-bold text-blue-700 dark:text-blue-300">
-                        ${{ number_format($totales_metodos['tarjeta'], 2) }}
+                    <p class="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                        ${{ number_format($totales_metodos['tarjeta_debito'], 2) }}
+                    </p>
+                </div>
+
+                <!-- Tarjeta de Crédito -->
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-lg border-2 border-indigo-200 dark:border-indigo-800">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-xs font-bold text-indigo-800 dark:text-indigo-200 uppercase tracking-wide">T. Crédito</h4>
+                        <svg class="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
+                            <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
+                        ${{ number_format($totales_metodos['tarjeta_credito'], 2) }}
                     </p>
                 </div>
 
                 <!-- Transferencia -->
-                <div class="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg border-2 border-purple-200 dark:border-purple-800">
+                <div class="bg-purple-50 dark:bg-purple-900/20 p-5 rounded-lg border-2 border-purple-200 dark:border-purple-800">
                     <div class="flex items-center justify-between mb-2">
-                        <h4 class="text-sm font-semibold text-purple-800 dark:text-purple-200">TRANSFERENCIA</h4>
-                        <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                        <h4 class="text-xs font-bold text-purple-800 dark:text-purple-200 uppercase tracking-wide">Transferencia</h4>
+                        <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z"/>
                         </svg>
                     </div>
-                    <p class="text-3xl font-bold text-purple-700 dark:text-purple-300">
+                    <p class="text-2xl font-bold text-purple-700 dark:text-purple-300">
                         ${{ number_format($totales_metodos['transferencia'], 2) }}
                     </p>
                 </div>
 
                 <!-- Total General -->
-                <div class="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-lg border-2 border-amber-200 dark:border-amber-800">
+                <div class="bg-amber-50 dark:bg-amber-900/20 p-5 rounded-lg border-2 border-amber-200 dark:border-amber-800 col-span-2 md:col-span-1">
                     <div class="flex items-center justify-between mb-2">
-                        <h4 class="text-sm font-semibold text-amber-800 dark:text-amber-200">TOTAL GENERAL</h4>
-                        <svg class="w-6 h-6 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                        <h4 class="text-xs font-bold text-amber-800 dark:text-amber-200 uppercase tracking-wide">Total General</h4>
+                        <svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/>
                         </svg>
                     </div>
-                    <p class="text-3xl font-bold text-amber-700 dark:text-amber-300">
+                    <p class="text-2xl font-bold text-amber-700 dark:text-amber-300">
                         ${{ number_format($totales_metodos['total_general'], 2) }}
                     </p>
                 </div>
             </div>
 
-            <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-1">
                 <p class="text-sm text-gray-700 dark:text-gray-300">
                     <span class="font-semibold">Total de Reservas:</span> {{ $totales_metodos['cantidad_reservas'] }}
                 </p>
                 @if($totales_metodos['combinado'] > 0)
-                <p class="text-sm text-gray-700 dark:text-gray-300 mt-2">
+                <p class="text-sm text-gray-700 dark:text-gray-300">
                     <span class="font-semibold">Nota:</span>
                     Se registraron ${{ number_format($totales_metodos['combinado'], 2) }} en pagos combinados
                     (ya incluidos en los totales por método)
@@ -170,76 +178,51 @@
     </div>
     @endif
 
-    <!-- Reporte: Reservas por Usuario -->
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- Reporte: Reservas por Usuario                  -->
+    <!-- ══════════════════════════════════════════════ -->
     @if($reporte_generado && $tipo_reporte === 'reservas_usuario')
     <div class="bg-white dark:bg-zinc-900 rounded-lg border-2 border-purple-200 dark:border-purple-800 shadow-lg overflow-hidden">
         <div class="bg-purple-800 dark:bg-purple-900 px-6 py-4">
-            <h3 class="text-xl font-bold text-white">
-                Reporte de Reservas por Recepcionista
-            </h3>
+            <h3 class="text-xl font-bold text-white">Reporte de Reservas por Recepcionista</h3>
             <p class="text-purple-200 text-sm mt-1">
                 Del {{ \Carbon\Carbon::parse($fecha_inicio)->format('d/m/Y') }}
                 al {{ \Carbon\Carbon::parse($fecha_fin)->format('d/m/Y') }}
             </p>
         </div>
-
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-purple-200 dark:divide-purple-800">
                 <thead class="bg-purple-100 dark:bg-purple-900/30">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-purple-900 dark:text-purple-100 uppercase tracking-wider">
-                            Recepcionista
-                        </th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-purple-900 dark:text-purple-100 uppercase tracking-wider">
-                            Total Reservas
-                        </th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-purple-900 dark:text-purple-100 uppercase tracking-wider">
-                            Confirmadas
-                        </th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-purple-900 dark:text-purple-100 uppercase tracking-wider">
-                            Completadas
-                        </th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-purple-900 dark:text-purple-100 uppercase tracking-wider">
-                            Canceladas
-                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-purple-900 dark:text-purple-100 uppercase tracking-wider">Recepcionista</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-purple-900 dark:text-purple-100 uppercase tracking-wider">Total</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-purple-900 dark:text-purple-100 uppercase tracking-wider">Confirmadas</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-purple-900 dark:text-purple-100 uppercase tracking-wider">Completadas</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-purple-900 dark:text-purple-100 uppercase tracking-wider">Canceladas</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-700">
                     @forelse($reservas_usuario as $usuario)
                     <tr class="hover:bg-purple-50 dark:hover:bg-purple-900/10">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    <div class="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-semibold">
-                                        {{ substr($usuario->usuario, 0, 1) }}
-                                    </div>
+                            <div class="flex items-center gap-3">
+                                <div class="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                                    {{ substr($usuario->usuario, 0, 1) }}
                                 </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                        {{ $usuario->usuario }}
-                                    </div>
-                                </div>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $usuario->usuario }}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <span class="text-lg font-bold text-purple-600 dark:text-purple-400">
-                                {{ $usuario->total_reservas }}
-                            </span>
+                            <span class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ $usuario->total_reservas }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                {{ $usuario->confirmadas }}
-                            </span>
+                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ $usuario->confirmadas }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                {{ $usuario->completadas }}
-                            </span>
+                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ $usuario->completadas }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                {{ $usuario->canceladas }}
-                            </span>
+                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ $usuario->canceladas }}</span>
                         </td>
                     </tr>
                     @empty

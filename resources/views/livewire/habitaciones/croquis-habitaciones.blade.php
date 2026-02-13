@@ -144,8 +144,6 @@
                                 {{ $habitacionSeleccionada['tipo'] }}
                             </p>
                         </div>
-
-
                     </div>
 
                     {{-- Estado actual --}}
@@ -194,65 +192,279 @@
                         </div>
                     </div>
 
-                    {{-- Información del cliente si está ocupada --}}
+                    {{-- ============================================================ --}}
+                    {{-- SECCIÓN DESPLEGABLE: RESERVA ACTUAL (con sub-secciones)      --}}
+                    {{-- ============================================================ --}}
                     @if($habitacionSeleccionada['estado'] === 'ocupada' && isset($habitacionSeleccionada['nom_completo']))
-                        <hr class="dark:border-gray-700">
+                        <hr class="my-4 dark:border-gray-700">
 
-                        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                            <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Reserva Actual</h4>
+                        {{-- Accordion principal: Reserva Actual --}}
+                        <div class="rounded-xl overflow-hidden border border-blue-200 dark:border-blue-700 shadow-sm"
+                             x-data="{ openReserva: true }">
 
-                            @if(isset($habitacionSeleccionada['folio']))
-                            <div class="mb-2">
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Folio</p>
-                                <p class="font-semibold text-gray-900 dark:text-white">
-                                    {{ $habitacionSeleccionada['folio'] }}
-                                </p>
+                            {{-- ── Encabezado desplegable ── --}}
+                            <button
+                                @click="openReserva = !openReserva"
+                                class="w-full flex items-center justify-between px-5 py-4 bg-blue-600 hover:bg-blue-700 transition-colors text-left focus:outline-none"
+                            >
+                                <span class="flex items-center gap-2 text-white font-bold text-base">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                    </svg>
+                                    Reserva Actual
+                                </span>
+                                <svg class="w-5 h-5 text-white transform transition-transform duration-200"
+                                     :class="openReserva ? 'rotate-180' : 'rotate-0'"
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            {{-- ── Contenido desplegable ── --}}
+                            <div
+                                x-show="openReserva"
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 -translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 -translate-y-1"
+                                class="bg-blue-50 dark:bg-blue-900/10 divide-y divide-blue-100 dark:divide-blue-800"
+                            >
+
+                                {{-- ── SUB-SECCIÓN 1: Datos generales de la reserva ── --}}
+                                <div class="p-5" x-data="{ openDatos: true }">
+
+                                    <button
+                                        @click="openDatos = !openDatos"
+                                        class="w-full flex items-center justify-between mb-3 text-left focus:outline-none group"
+                                    >
+                                        <h5 class="text-sm font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            Información del Huésped
+                                        </h5>
+                                        <svg class="w-4 h-4 text-blue-500 transform transition-transform duration-150"
+                                             :class="openDatos ? 'rotate-180' : 'rotate-0'"
+                                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+
+                                    <div x-show="openDatos"
+                                         x-transition:enter="transition ease-out duration-150"
+                                         x-transition:enter-start="opacity-0"
+                                         x-transition:enter-end="opacity-100">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            @if(isset($habitacionSeleccionada['folio']))
+                                                <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Folio</p>
+                                                    <p class="font-bold text-gray-900 dark:text-white text-lg">{{ $habitacionSeleccionada['folio'] }}</p>
+                                                </div>
+                                            @endif
+
+                                            <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Cliente</p>
+                                                <p class="font-semibold text-gray-900 dark:text-white">{{ $habitacionSeleccionada['nom_completo'] }}</p>
+                                            </div>
+
+                                            @if(isset($habitacionSeleccionada['correo']))
+                                                <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800 sm:col-span-2">
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Correo</p>
+                                                    <p class="font-medium text-gray-900 dark:text-white break-all">{{ $habitacionSeleccionada['correo'] }}</p>
+                                                </div>
+                                            @endif
+
+                                            <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Check-in</p>
+                                                <p class="font-medium text-gray-900 dark:text-white">
+                                                    {{ \Carbon\Carbon::parse($habitacionSeleccionada['fecha_check_in'])->format('d/m/Y') }}
+                                                </p>
+                                            </div>
+
+                                            <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Check-out</p>
+                                                <p class="font-medium text-gray-900 dark:text-white">
+                                                    {{ \Carbon\Carbon::parse($habitacionSeleccionada['fecha_check_out'])->format('d/m/Y') }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- ── SUB-SECCIÓN 2: Servicios Adicionales ── --}}
+                                <div class="p-5" x-data="{ openServicios: true }">
+
+                                    <button
+                                        @click="openServicios = !openServicios"
+                                        class="w-full flex items-center justify-between mb-3 text-left focus:outline-none"
+                                    >
+                                        <h5 class="text-sm font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                                            {{-- Icono maleta/servicios --}}
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                            Servicios Adicionales
+                                            {{-- Badge con cantidad --}}
+                                            @php $totalServicios = count($habitacionSeleccionada['servicios'] ?? []); @endphp
+                                            <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold
+                                                {{ $totalServicios > 0 ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300' }}">
+                                                {{ $totalServicios }}
+                                            </span>
+                                        </h5>
+                                        <svg class="w-4 h-4 text-blue-500 transform transition-transform duration-150"
+                                             :class="openServicios ? 'rotate-180' : 'rotate-0'"
+                                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+
+                                    <div x-show="openServicios"
+                                         x-transition:enter="transition ease-out duration-150"
+                                         x-transition:enter-start="opacity-0"
+                                         x-transition:enter-end="opacity-100">
+
+                                        @if(isset($habitacionSeleccionada['servicios']) && count($habitacionSeleccionada['servicios']) > 0)
+                                            <div class="bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-800 overflow-hidden">
+                                                <ul class="divide-y divide-gray-100 dark:divide-gray-700">
+                                                    @foreach($habitacionSeleccionada['servicios'] as $servicio)
+                                                        <li class="px-4 py-3 flex justify-between items-start text-sm hover:bg-gray-50 dark:hover:bg-zinc-700/50 transition-colors">
+                                                            <div class="flex items-start gap-2">
+                                                                <svg class="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                                <span class="text-gray-700 dark:text-gray-300">
+                                                                    {{ $servicio['concepto'] ?? $servicio['descripcion'] ?? 'Servicio sin descripción' }}
+                                                                </span>
+                                                            </div>
+                                                            @if(!empty($servicio['precio']))
+                                                                <span class="font-semibold text-green-600 dark:text-green-400 ml-3 flex-shrink-0">
+                                                                    ${{ number_format($servicio['precio'], 2) }}
+                                                                </span>
+                                                            @endif
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+
+                                                {{-- Total sólo si hay precios --}}
+                                                @php
+                                                    $totalPrecio = collect($habitacionSeleccionada['servicios'])->sum('precio');
+                                                @endphp
+                                                @if($totalPrecio > 0)
+                                                    <div class="bg-gray-50 dark:bg-zinc-700/50 px-4 py-2 flex justify-end items-center gap-2">
+                                                        <span class="text-xs text-gray-500 dark:text-gray-400">Total Servicios:</span>
+                                                        <span class="font-bold text-gray-900 dark:text-white">
+                                                            ${{ number_format($totalPrecio, 2) }}
+                                                        </span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="flex items-center gap-2 px-3 py-4 bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-800 text-gray-500 dark:text-gray-400">
+                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                                </svg>
+                                                <span class="text-sm italic">No hay servicios adicionales registrados para esta reserva.</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                {{-- ── SUB-SECCIÓN 3: Datos del Vehículo ── --}}
+                                <div class="p-5" x-data="{ openVehiculo: true }">
+
+                                    <button
+                                        @click="openVehiculo = !openVehiculo"
+                                        class="w-full flex items-center justify-between mb-3 text-left focus:outline-none"
+                                    >
+                                        <h5 class="text-sm font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                                            {{-- Icono auto --}}
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2m0 0h10m-10 0H3m10 0h3m0 0l3-3m-3 3V6a1 1 0 011-1h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V16" />
+                                            </svg>
+                                            Datos del Vehículo
+                                            {{-- Indicador si hay o no vehículo --}}
+                                            @if(!empty($habitacionSeleccionada['vehiculo_tipo']) || !empty($habitacionSeleccionada['vehiculo_descripcion']))
+                                                <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500 text-white">
+                                                    Registrado
+                                                </span>
+                                            @else
+                                                <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                                                    Sin registro
+                                                </span>
+                                            @endif
+                                        </h5>
+                                        <svg class="w-4 h-4 text-blue-500 transform transition-transform duration-150"
+                                             :class="openVehiculo ? 'rotate-180' : 'rotate-0'"
+                                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+
+                                    <div x-show="openVehiculo"
+                                         x-transition:enter="transition ease-out duration-150"
+                                         x-transition:enter-start="opacity-0"
+                                         x-transition:enter-end="opacity-100">
+
+                                        @if(!empty($habitacionSeleccionada['vehiculo_tipo']) || !empty($habitacionSeleccionada['vehiculo_descripcion']))
+                                            <div class="bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-800 overflow-hidden">
+                                                <div class="divide-y divide-gray-100 dark:divide-gray-700">
+
+                                                    @if(!empty($habitacionSeleccionada['vehiculo_tipo']))
+                                                        <div class="flex items-center justify-between px-4 py-3">
+                                                            <div class="flex items-center gap-2">
+                                                                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                                                                </svg>
+                                                                <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">Tipo</span>
+                                                            </div>
+                                                            <span class="text-sm font-semibold text-gray-900 dark:text-white capitalize">
+                                                                {{ $habitacionSeleccionada['vehiculo_tipo'] }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
+
+                                                    @if(!empty($habitacionSeleccionada['vehiculo_descripcion']))
+                                                        <div class="flex items-start justify-between px-4 py-3">
+                                                            <div class="flex items-center gap-2">
+                                                                <svg class="w-4 h-4 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                                                                </svg>
+                                                                <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">Descripción</span>
+                                                            </div>
+                                                            <span class="text-sm font-medium text-gray-900 dark:text-white text-right max-w-[55%]">
+                                                                {{ $habitacionSeleccionada['vehiculo_descripcion'] }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
+
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="flex items-center gap-2 px-3 py-4 bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-800 text-gray-500 dark:text-gray-400">
+                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span class="text-sm italic">No se registró información de vehículo.</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
                             </div>
-                            @endif
-
-                            <div class="mb-2">
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Cliente</p>
-                                <p class="font-semibold text-gray-900 dark:text-white">
-                                    {{ $habitacionSeleccionada['nom_completo'] }}
-                                </p>
-                            </div>
-
-                            @if(isset($habitacionSeleccionada['correo']))
-                            <div class="mb-2">
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Correo</p>
-                                <p class="font-semibold text-gray-900 dark:text-white break-all">
-                                    {{ $habitacionSeleccionada['correo'] }}
-                                </p>
-                            </div>
-                            @endif
-
-                            @if(isset($habitacionSeleccionada['no_personas']))
-                            <div class="mb-2">
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Número de Personas</p>
-                                <p class="font-semibold text-gray-900 dark:text-white">
-                                    {{ $habitacionSeleccionada['no_personas'] }}
-                                </p>
-                            </div>
-                            @endif
-
-                            @if(isset($habitacionSeleccionada['fecha_check_in']))
-                            <div class="mb-2">
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Check-in</p>
-                                <p class="font-semibold text-gray-900 dark:text-white">
-                                    {{ \Carbon\Carbon::parse($habitacionSeleccionada['fecha_check_in'])->format('d/m/Y') }}
-                                </p>
-                            </div>
-                            @endif
-
-                            @if(isset($habitacionSeleccionada['fecha_check_out']))
-                            <div class="mb-2">
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Check-out</p>
-                                <p class="font-semibold text-gray-900 dark:text-white">
-                                    {{ \Carbon\Carbon::parse($habitacionSeleccionada['fecha_check_out'])->format('d/m/Y') }}
-                                </p>
-                            </div>
-                            @endif
+                            {{-- /Fin contenido accordion principal --}}
                         </div>
+                        {{-- /Fin accordion Reserva Actual --}}
+
                     @elseif($habitacionSeleccionada['estado'] === 'disponible')
                         <p class="text-center py-4 text-green-600 dark:text-green-400 font-semibold">
                             Habitación disponible para reservar
