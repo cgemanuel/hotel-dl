@@ -23,7 +23,10 @@ class CrearReserva extends Component
     public $fecha_check_in = '';
     public $fecha_check_out = '';
     public $no_personas = 1;
-    public $habitacion_id = '';
+
+    // ── CAMBIO: de una sola habitacion a un array ──
+    public $habitaciones_ids = [];   // array de idhabitacion seleccionados
+
     public $plataforma_id = '';
 
     // Método de pago
@@ -54,6 +57,7 @@ class CrearReserva extends Component
 
         $this->habitaciones = DB::table('habitaciones')
             ->where('estado', 'disponible')
+            ->orderBy('no_habitacion')
             ->get();
 
         $this->plataformas = DB::table('plat_reserva')->get();
@@ -66,12 +70,13 @@ class CrearReserva extends Component
             'nom_completo', 'tipo_identificacion',
             'direccion', 'correo',
             'fecha_check_in', 'fecha_check_out', 'no_personas',
-            'habitacion_id', 'plataforma_id', 'metodo_pago',
+            'habitaciones_ids', 'plataforma_id', 'metodo_pago',
             'monto_efectivo', 'monto_tarjeta', 'monto_transferencia',
             'total_reserva', 'folio'
         ]);
         $this->cliente_existente = false;
         $this->pais_origen = 'México';
+        $this->habitaciones_ids = [];
         $this->cargarDatos();
     }
 
@@ -88,18 +93,29 @@ class CrearReserva extends Component
                 ->first();
 
             if ($cliente) {
-                $this->nom_completo       = $cliente->nom_completo;
+                $this->nom_completo        = $cliente->nom_completo;
                 $this->tipo_identificacion = $cliente->tipo_identificacion;
-                $this->direccion          = $cliente->direccion;
-                $this->pais_origen        = $cliente->pais_origen;
-                $this->correo             = $cliente->correo;
-                $this->cliente_existente  = true;
+                $this->direccion           = $cliente->direccion;
+                $this->pais_origen         = $cliente->pais_origen;
+                $this->correo              = $cliente->correo;
+                $this->cliente_existente   = true;
             }
         } else {
             $this->cliente_existente = false;
             $this->reset(['nom_completo', 'tipo_identificacion', 'direccion', 'correo']);
             $this->pais_origen = 'México';
         }
+    }
+
+    // ── Helper: devuelve las habitaciones seleccionadas como colección ──
+    public function getHabitacionesSeleccionadasProperty()
+    {
+        if (empty($this->habitaciones_ids)) {
+            return collect();
+        }
+        return collect($this->habitaciones)->filter(
+            fn($h) => in_array($h->idhabitacion, $this->habitaciones_ids)
+        );
     }
 
     public function guardar()
@@ -114,9 +130,10 @@ class CrearReserva extends Component
             'fecha_check_in'      => 'required|date|after_or_equal:today',
             'fecha_check_out'     => 'required|date|after:fecha_check_in',
             'no_personas'         => 'required|integer|min:1',
-            'habitacion_id'       => 'required|exists:habitaciones,idhabitacion',
+            // ── CAMBIO: ahora validamos el array ──
+            'habitaciones_ids'    => 'required|array|min:1',
+            'habitaciones_ids.*'  => 'exists:habitaciones,idhabitacion',
             'plataforma_id'       => 'required|exists:plat_reserva,idplat_reserva',
-            // ── Nuevos métodos de pago incluidos ──
             'metodo_pago'         => 'required|in:efectivo,tarjeta_debito,tarjeta_credito,transferencia,combinado',
             'total_reserva'       => 'required|numeric|min:0',
         ], [
@@ -126,6 +143,8 @@ class CrearReserva extends Component
             'tipo_identificacion.required' => 'Seleccione un tipo de identificación',
             'fecha_check_in.after_or_equal'=> 'La fecha de check-in no puede ser anterior a hoy',
             'fecha_check_out.after'        => 'La fecha de check-out debe ser posterior al check-in',
+            'habitaciones_ids.required'    => 'Debe seleccionar al menos una habitación',
+            'habitaciones_ids.min'         => 'Debe seleccionar al menos una habitación',
             'metodo_pago.required'         => 'Debe seleccionar un método de pago',
             'metodo_pago.in'               => 'Método de pago no válido',
             'total_reserva.required'       => 'Debe ingresar el total de la reserva',
@@ -143,6 +162,7 @@ class CrearReserva extends Component
         try {
             DB::beginTransaction();
 
+            // ── Crear o reusar cliente ──
             if (!$this->cliente_existente) {
                 $this->cliente_id = DB::table('clientes')->insertGetId([
                     'nom_completo'        => $this->nom_completo,
@@ -157,6 +177,7 @@ class CrearReserva extends Component
                 ]);
             }
 
+            // ── Crear reserva ──
             $reserva_id = DB::table('reservas')->insertGetId([
                 'folio'                       => $this->folio,
                 'fecha_reserva'               => $this->fecha_reserva,
@@ -179,28 +200,37 @@ class CrearReserva extends Component
                 'updated_at'                  => now(),
             ]);
 
+            // ── Auditoría ──
             \App\Services\AuditService::logCreated('Reserva', $reserva_id, [
-                'folio'          => $this->folio,
-                'cliente_id'     => $this->cliente_id,
-                'habitacion_id'  => $this->habitacion_id,
-                'fecha_check_in' => $this->fecha_check_in,
-                'fecha_check_out'=> $this->fecha_check_out,
-                'estado'         => 'confirmada',
-                'total_reserva'  => $this->total_reserva,
+                'folio'            => $this->folio,
+                'cliente_id'       => $this->cliente_id,
+                'habitaciones_ids' => $this->habitaciones_ids,
+                'fecha_check_in'   => $this->fecha_check_in,
+                'fecha_check_out'  => $this->fecha_check_out,
+                'estado'           => 'confirmada',
+                'total_reserva'    => $this->total_reserva,
             ]);
 
-            DB::table('habitaciones_has_reservas')->insert([
-                'habitaciones_idhabitacion' => $this->habitacion_id,
-                'reservas_idreservas'       => $reserva_id,
-            ]);
+            // ── CAMBIO: vincular TODAS las habitaciones seleccionadas ──
+            foreach ($this->habitaciones_ids as $habitacion_id) {
+                DB::table('habitaciones_has_reservas')->insert([
+                    'habitaciones_idhabitacion' => $habitacion_id,
+                    'reservas_idreservas'       => $reserva_id,
+                ]);
 
-            DB::table('habitaciones')
-                ->where('idhabitacion', $this->habitacion_id)
-                ->update(['estado' => 'ocupada']);
+                DB::table('habitaciones')
+                    ->where('idhabitacion', $habitacion_id)
+                    ->update(['estado' => 'ocupada']);
+            }
 
             DB::commit();
 
-            session()->flash('message', 'Reserva creada exitosamente. Folio: ' . $this->folio);
+            $totalHabs = count($this->habitaciones_ids);
+            $msg = $totalHabs === 1
+                ? "Reserva creada exitosamente. Folio: {$this->folio}"
+                : "Reserva creada exitosamente con {$totalHabs} habitaciones. Folio: {$this->folio}";
+
+            session()->flash('message', $msg);
             $this->cerrar();
             $this->dispatch('reserva-creada');
 

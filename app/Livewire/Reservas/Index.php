@@ -40,9 +40,13 @@ class Index extends Component
     public $edit_total_reserva;
     public $edit_tipo_vehiculo;
     public $edit_descripcion_vehiculo;
-    // ── Nuevas propiedades editables ──
-    public $edit_nom_completo   = '';   // nombre del cliente (para corregir ortografía)
-    public $edit_metodo_pago    = '';   // método de pago (para migrar valor legacy "tarjeta")
+    public $edit_nom_completo   = '';
+    public $edit_correo         = '';
+    public $edit_metodo_pago    = '';
+
+    // ── Habitaciones multi-selección ──
+    public $edit_habitaciones_ids = [];
+    public $edit_habitaciones_disponibles = [];
 
     protected $queryString = ['search', 'fecha_inicio', 'fecha_fin', 'estado_filtro'];
     protected $listeners = [
@@ -247,41 +251,65 @@ class Index extends Component
 
     public function editar($id)
     {
-        try {
-            $this->reservaSeleccionada = DB::table('reservas')
-                ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
-                ->where('reservas.idreservas', $id)
-                ->select('reservas.*', 'clientes.nom_completo', 'clientes.idclientes')
-                ->first();
+        $reserva = DB::table('reservas')
+            ->join('clientes', 'clientes.idclientes', '=', 'reservas.clientes_idclientes')
+            ->leftJoin('plat_reserva', 'plat_reserva.idplat_reserva', '=', 'reservas.plat_reserva_idplat_reserva')
+            ->where('reservas.idreservas', $id)
+            ->select(
+                'reservas.*',
+                'clientes.nom_completo',
+                'clientes.correo',
+                'plat_reserva.nombre_plataforma'
+            )
+            ->first();
 
-            if ($this->reservaSeleccionada) {
-                $this->editando_id                      = $this->reservaSeleccionada->idreservas;
-                $this->edit_fecha_reserva               = $this->reservaSeleccionada->fecha_reserva;
-                $this->edit_fecha_check_in              = $this->reservaSeleccionada->fecha_check_in;
-                $this->edit_fecha_check_out             = $this->reservaSeleccionada->fecha_check_out;
-                $this->edit_no_personas                 = $this->reservaSeleccionada->no_personas;
-                $this->edit_estado                      = $this->reservaSeleccionada->estado;
-                $this->edit_estacionamiento_no_espacio  = $this->reservaSeleccionada->estacionamiento_no_espacio;
-                $this->edit_total_reserva               = $this->reservaSeleccionada->total_reserva;
-                $this->edit_tipo_vehiculo               = $this->reservaSeleccionada->tipo_vehiculo;
-                $this->edit_descripcion_vehiculo        = $this->reservaSeleccionada->descripcion_vehiculo;
-                // ── Nuevos campos ──
-                $this->edit_nom_completo                = $this->reservaSeleccionada->nom_completo;
-                $this->edit_metodo_pago                 = $this->reservaSeleccionada->metodo_pago ?? '';
-
-                $todosEspacios = DB::table('estacionamiento')->get();
-                $this->espacios_disponibles = $todosEspacios->filter(function ($espacio) {
-                    return $espacio->estado === 'disponible' ||
-                           $espacio->no_espacio == $this->reservaSeleccionada->estacionamiento_no_espacio;
-                })->values();
-
-                $this->mostrarModalEditar = true;
-            } else {
-                session()->flash('error', 'Reserva no encontrada.');
-            }
-        } catch (\Exception $e) {
-            session()->flash('error', 'Error al cargar la reserva: ' . $e->getMessage());
+        if (!$reserva) {
+            session()->flash('error', 'Reserva no encontrada.');
+            return;
         }
+
+        $this->editando_id                      = $reserva->idreservas;
+        $this->edit_fecha_reserva               = $reserva->fecha_reserva;
+        $this->edit_fecha_check_in              = $reserva->fecha_check_in;
+        $this->edit_fecha_check_out             = $reserva->fecha_check_out;
+        $this->edit_no_personas                 = $reserva->no_personas;
+        $this->edit_estado                      = $reserva->estado;
+        $this->edit_nom_completo                = $reserva->nom_completo;
+        $this->edit_correo                      = $reserva->correo ?? '';
+        $this->edit_metodo_pago                 = $reserva->metodo_pago;
+        $this->edit_total_reserva               = $reserva->total_reserva;
+        $this->edit_estacionamiento_no_espacio  = $reserva->estacionamiento_no_espacio;
+        $this->edit_tipo_vehiculo               = $reserva->tipo_vehiculo;
+        $this->edit_descripcion_vehiculo        = $reserva->descripcion_vehiculo;
+
+        // ── HABITACIONES: cargar actuales de esta reserva ──
+        $this->edit_habitaciones_ids = DB::table('habitaciones_has_reservas')
+            ->where('reservas_idreservas', $id)
+            ->pluck('habitaciones_idhabitacion')
+            ->map(fn($v) => (int) $v)
+            ->toArray();
+
+        // ── HABITACIONES: disponibles + las ya asignadas a esta reserva ──
+        $this->edit_habitaciones_disponibles = DB::table('habitaciones')
+            ->where(function ($q) use ($id) {
+                $q->where('estado', 'disponible')
+                  ->orWhereIn('idhabitacion', function ($sub) use ($id) {
+                      $sub->select('habitaciones_idhabitacion')
+                          ->from('habitaciones_has_reservas')
+                          ->where('reservas_idreservas', $id);
+                  });
+            })
+            ->orderBy('no_habitacion')
+            ->get();
+
+        // ── Espacios de estacionamiento ──
+        $todosEspacios = DB::table('estacionamiento')->get();
+        $this->espacios_disponibles = $todosEspacios->filter(function ($espacio) use ($reserva) {
+            return $espacio->estado === 'disponible' ||
+                   $espacio->no_espacio == $reserva->estacionamiento_no_espacio;
+        })->values();
+
+        $this->mostrarModalEditar = true;
     }
 
     public function cerrarModalEditar()
@@ -292,28 +320,29 @@ class Index extends Component
             'edit_fecha_check_out', 'edit_no_personas', 'edit_estado',
             'edit_estacionamiento_no_espacio', 'edit_total_reserva',
             'edit_tipo_vehiculo', 'edit_descripcion_vehiculo',
-            'edit_nom_completo', 'edit_metodo_pago',   // ← nuevos
+            'edit_nom_completo', 'edit_correo', 'edit_metodo_pago',
+            'edit_habitaciones_ids', 'edit_habitaciones_disponibles',
         ]);
     }
 
     public function actualizarReserva()
     {
         $this->validate([
-            'edit_fecha_reserva'    => 'required|date',
-            'edit_fecha_check_in'   => 'required|date',
-            'edit_fecha_check_out'  => 'required|date|after:edit_fecha_check_in',
-            'edit_no_personas'      => 'required|integer|min:1',
-            'edit_estado'           => 'required|in:pendiente,confirmada,cancelada,completada',
-            'edit_total_reserva'    => 'required|numeric|min:0',
-            // Nombre: obligatorio, mínimo 3 caracteres
-            'edit_nom_completo'     => 'required|min:3',
-            // Método de pago: incluye 'tarjeta' para compatibilidad con registros legacy
-            'edit_metodo_pago'      => 'required|in:efectivo,tarjeta_debito,tarjeta_credito,transferencia,combinado,tarjeta',
+            'edit_fecha_reserva'     => 'required|date',
+            'edit_fecha_check_in'    => 'required|date',
+            'edit_fecha_check_out'   => 'required|date|after:edit_fecha_check_in',
+            'edit_no_personas'       => 'required|integer|min:1',
+            'edit_estado'            => 'required|in:pendiente,confirmada,cancelada,completada',
+            'edit_nom_completo'      => 'required|min:3',
+            'edit_correo'            => 'nullable|email',
+            'edit_metodo_pago'       => 'nullable',
+            'edit_total_reserva'     => 'nullable|numeric|min:0',
+            // ── Habitaciones ──
+            'edit_habitaciones_ids'  => 'required|array|min:1',
+            'edit_habitaciones_ids.*'=> 'exists:habitaciones,idhabitacion',
         ], [
-            'edit_nom_completo.required' => 'El nombre del cliente es obligatorio',
-            'edit_nom_completo.min'      => 'El nombre debe tener al menos 3 caracteres',
-            'edit_metodo_pago.required'  => 'Selecciona un método de pago',
-            'edit_metodo_pago.in'        => 'Método de pago no válido',
+            'edit_habitaciones_ids.required' => 'Debes seleccionar al menos una habitación',
+            'edit_habitaciones_ids.min'      => 'Debes seleccionar al menos una habitación',
         ]);
 
         try {
@@ -322,7 +351,6 @@ class Index extends Component
             $reservaActual = DB::table('reservas')->where('idreservas', $this->editando_id)->first();
             if (!$reservaActual) throw new \Exception('Reserva no encontrada');
 
-            // Obtener cliente actual para auditoría del nombre
             $clienteActual = DB::table('clientes')
                 ->where('idclientes', $reservaActual->clientes_idclientes)
                 ->first();
@@ -343,6 +371,7 @@ class Index extends Component
                     'descripcion_vehiculo'       => $reservaActual->descripcion_vehiculo,
                     'metodo_pago'                => $reservaActual->metodo_pago,
                     'nom_completo_cliente'       => $clienteActual->nom_completo ?? null,
+                    'correo_cliente'             => $clienteActual->correo ?? null,
                 ],
                 [
                     'fecha_reserva'              => $this->edit_fecha_reserva,
@@ -356,6 +385,7 @@ class Index extends Component
                     'descripcion_vehiculo'       => $this->edit_descripcion_vehiculo ?: null,
                     'metodo_pago'                => $this->edit_metodo_pago,
                     'nom_completo_cliente'       => $this->edit_nom_completo,
+                    'correo_cliente'             => $this->edit_correo,
                 ]
             );
 
@@ -389,18 +419,54 @@ class Index extends Component
                     'total_reserva'              => $this->edit_total_reserva,
                     'tipo_vehiculo'              => $this->edit_tipo_vehiculo ?: null,
                     'descripcion_vehiculo'       => $this->edit_descripcion_vehiculo ?: null,
-                    'metodo_pago'                => $this->edit_metodo_pago,   // ← nuevo
+                    'metodo_pago'                => $this->edit_metodo_pago,
                     'updated_at'                 => now(),
                 ]);
 
-            // ── Actualizar nombre del cliente (solo si cambió) ──
-            if ($clienteActual && trim($this->edit_nom_completo) !== trim($clienteActual->nom_completo)) {
+            // ── Actualizar cliente ──
+            if ($clienteActual) {
                 DB::table('clientes')
                     ->where('idclientes', $reservaActual->clientes_idclientes)
                     ->update([
                         'nom_completo' => trim($this->edit_nom_completo),
-                        'updated_at'   => now(),
+                        'correo'       => $this->edit_correo ?: null,
                     ]);
+            }
+
+            // ── HABITACIONES: recalcular ──
+            $habitacionesAnteriores = DB::table('habitaciones_has_reservas')
+                ->where('reservas_idreservas', $this->editando_id)
+                ->pluck('habitaciones_idhabitacion')
+                ->map(fn($v) => (int) $v)
+                ->toArray();
+
+            $habitacionesNuevas = array_map('intval', $this->edit_habitaciones_ids);
+
+            $paraAgregar  = array_diff($habitacionesNuevas, $habitacionesAnteriores);
+            $paraEliminar = array_diff($habitacionesAnteriores, $habitacionesNuevas);
+
+            // Eliminar las que ya no están
+            foreach ($paraEliminar as $habitacionId) {
+                DB::table('habitaciones_has_reservas')
+                    ->where('reservas_idreservas', $this->editando_id)
+                    ->where('habitaciones_idhabitacion', $habitacionId)
+                    ->delete();
+
+                DB::table('habitaciones')
+                    ->where('idhabitacion', $habitacionId)
+                    ->update(['estado' => 'disponible']);
+            }
+
+            // Agregar las nuevas
+            foreach ($paraAgregar as $habitacionId) {
+                DB::table('habitaciones_has_reservas')->insert([
+                    'habitaciones_idhabitacion' => $habitacionId,
+                    'reservas_idreservas'       => $this->editando_id,
+                ]);
+
+                DB::table('habitaciones')
+                    ->where('idhabitacion', $habitacionId)
+                    ->update(['estado' => 'ocupada']);
             }
 
             DB::commit();
@@ -435,12 +501,14 @@ class Index extends Component
                 DB::table('reservas')->where('idreservas', $id)
                     ->update(['estado' => 'cancelada', 'updated_at' => now()]);
 
-                $habitacion = DB::table('habitaciones_has_reservas')
-                    ->where('reservas_idreservas', $id)->first();
+                // Liberar TODAS las habitaciones
+                $habitaciones = DB::table('habitaciones_has_reservas')
+                    ->where('reservas_idreservas', $id)
+                    ->pluck('habitaciones_idhabitacion');
 
-                if ($habitacion) {
+                foreach ($habitaciones as $habitacionId) {
                     DB::table('habitaciones')
-                        ->where('idhabitacion', $habitacion->habitaciones_idhabitacion)
+                        ->where('idhabitacion', $habitacionId)
                         ->update(['estado' => 'disponible']);
                 }
 
@@ -477,12 +545,14 @@ class Index extends Component
                 DB::table('reservas')->where('idreservas', $id)
                     ->update(['estado' => 'completada', 'updated_at' => now()]);
 
-                $habitacion = DB::table('habitaciones_has_reservas')
-                    ->where('reservas_idreservas', $id)->first();
+                // Liberar TODAS las habitaciones
+                $habitaciones = DB::table('habitaciones_has_reservas')
+                    ->where('reservas_idreservas', $id)
+                    ->pluck('habitaciones_idhabitacion');
 
-                if ($habitacion) {
+                foreach ($habitaciones as $habitacionId) {
                     DB::table('habitaciones')
-                        ->where('idhabitacion', $habitacion->habitaciones_idhabitacion)
+                        ->where('idhabitacion', $habitacionId)
                         ->update(['estado' => 'disponible']);
                 }
 
@@ -506,11 +576,6 @@ class Index extends Component
 
     public function eliminarPermanente($id)
     {
-        if (auth()->user()->rol !== 'gerente,superusuario,recepcionista') {
-            session()->flash('error', 'No tienes permisos para eliminar reservas.');
-            return;
-        }
-
         try {
             DB::beginTransaction();
 
@@ -525,12 +590,14 @@ class Index extends Component
                     'fecha_check_out'=> $reserva->fecha_check_out,
                 ]);
 
-                $habitacion = DB::table('habitaciones_has_reservas')
-                    ->where('reservas_idreservas', $id)->first();
+                // Liberar TODAS las habitaciones
+                $habitaciones = DB::table('habitaciones_has_reservas')
+                    ->where('reservas_idreservas', $id)
+                    ->pluck('habitaciones_idhabitacion');
 
-                if ($habitacion) {
+                foreach ($habitaciones as $habitacionId) {
                     DB::table('habitaciones')
-                        ->where('idhabitacion', $habitacion->habitaciones_idhabitacion)
+                        ->where('idhabitacion', $habitacionId)
                         ->update(['estado' => 'disponible']);
                 }
 

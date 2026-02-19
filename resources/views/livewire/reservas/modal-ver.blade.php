@@ -41,9 +41,7 @@
         <div class="flex-grow overflow-y-auto px-4 py-4 sm:px-6" style="max-height: calc(90vh - 180px);">
 
             <!-- Acordeones -->
-            <div class="space-y-3" x-data="{
-                activeSection: 'cliente'
-            }">
+            <div class="space-y-3" x-data="{ activeSection: 'cliente' }">
 
                 <!-- Acordeón 1: Cliente -->
                 <div class="border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
@@ -58,18 +56,15 @@
                                 Información del Cliente
                             </h4>
                         </div>
-                        <svg
-                            class="w-5 h-5 text-blue-600 dark:text-blue-400 transition-transform duration-200"
+                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 transition-transform duration-200"
                             :class="{ 'rotate-180': activeSection === 'cliente' }"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
 
-                    <div
-                        x-show="activeSection === 'cliente'"
-                        x-collapse
-                        class="px-4 py-4 space-y-4 bg-blue-50 dark:bg-blue-900/10">
+                    <div x-show="activeSection === 'cliente'" x-collapse
+                         class="px-4 py-4 space-y-4 bg-blue-50 dark:bg-blue-900/10">
 
                         <div>
                             <label class="text-xs font-medium text-zinc-500 dark:text-zinc-400">Nombre Completo</label>
@@ -133,18 +128,15 @@
                                 Detalles de la Reserva
                             </h4>
                         </div>
-                        <svg
-                            class="w-5 h-5 text-green-600 dark:text-green-400 transition-transform duration-200"
+                        <svg class="w-5 h-5 text-green-600 dark:text-green-400 transition-transform duration-200"
                             :class="{ 'rotate-180': activeSection === 'reserva' }"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
 
-                    <div
-                        x-show="activeSection === 'reserva'"
-                        x-collapse
-                        class="px-4 py-4 space-y-4 bg-green-50 dark:bg-green-900/10">
+                    <div x-show="activeSection === 'reserva'" x-collapse
+                         class="px-4 py-4 space-y-4 bg-green-50 dark:bg-green-900/10">
 
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -153,7 +145,6 @@
                                     {{ \Carbon\Carbon::parse($reservaSeleccionada['fecha_check_in'])->format('d/m/Y') }}
                                 </p>
                             </div>
-
                             <div>
                                 <label class="text-xs font-medium">Check-out</label>
                                 <p class="text-sm font-semibold">
@@ -182,15 +173,54 @@
                             </p>
                         </div>
 
-                        @if(!empty($reservaSeleccionada['no_habitacion']))
+                        {{-- ══════════════════════════════════════════════════════ --}}
+                        {{-- HABITACIONES: muestra TODAS las asociadas al folio    --}}
+                        {{-- ══════════════════════════════════════════════════════ --}}
+                        @php
+                            $habitacionesReserva = \Illuminate\Support\Facades\DB::table('habitaciones_has_reservas')
+                                ->join('habitaciones', 'habitaciones.idhabitacion', '=', 'habitaciones_has_reservas.habitaciones_idhabitacion')
+                                ->where('habitaciones_has_reservas.reservas_idreservas', $reservaSeleccionada['idreservas'])
+                                ->select('habitaciones.no_habitacion', 'habitaciones.tipo')
+                                ->get();
+                        @endphp
+
+                        @if($habitacionesReserva->count() > 0)
                         <div class="bg-white dark:bg-zinc-800 p-3 rounded-lg">
-                            <label class="text-xs font-medium">Habitación</label>
-                            <p class="text-lg font-bold text-green-600 dark:text-green-400">
-                                No. {{ $reservaSeleccionada['no_habitacion'] }}
-                            </p>
-                            <p class="text-xs">{{ $reservaSeleccionada['tipo_habitacion'] }}</p>
+                            <label class="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                                {{ $habitacionesReserva->count() === 1 ? 'Habitación' : 'Habitaciones (' . $habitacionesReserva->count() . ')' }}
+                            </label>
+
+                            @if($habitacionesReserva->count() === 1)
+                                {{-- Una sola habitación: vista original --}}
+                                <p class="text-lg font-bold text-green-600 dark:text-green-400 mt-1">
+                                    No. {{ $habitacionesReserva->first()->no_habitacion }}
+                                </p>
+                                <p class="text-xs capitalize text-zinc-500 dark:text-zinc-400">
+                                    {{ $habitacionesReserva->first()->tipo }}
+                                </p>
+                            @else
+                                {{-- Múltiples habitaciones: grid de tarjetas --}}
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    @foreach($habitacionesReserva as $hab)
+                                        <div class="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg">
+                                            <svg class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                            </svg>
+                                            <div>
+                                                <span class="block text-sm font-bold text-green-700 dark:text-green-300 leading-tight">
+                                                    No. {{ $hab->no_habitacion }}
+                                                </span>
+                                                <span class="block text-xs capitalize text-zinc-500 dark:text-zinc-400 leading-tight">
+                                                    {{ $hab->tipo }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                         @endif
+                        {{-- /HABITACIONES --}}
 
                         @if(!empty($reservaSeleccionada['no_espacio']))
                         <div class="bg-white dark:bg-zinc-800 p-3 rounded-lg">
@@ -233,18 +263,15 @@
                                 Costo Total
                             </h4>
                         </div>
-                        <svg
-                            class="w-5 h-5 text-amber-600 dark:text-amber-400 transition-transform duration-200"
+                        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 transition-transform duration-200"
                             :class="{ 'rotate-180': activeSection === 'costo' }"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
 
-                    <div
-                        x-show="activeSection === 'costo'"
-                        x-collapse
-                        class="px-4 py-4 bg-amber-50 dark:bg-amber-900/10">
+                    <div x-show="activeSection === 'costo'" x-collapse
+                         class="px-4 py-4 bg-amber-50 dark:bg-amber-900/10">
 
                         <div class="flex justify-between text-2xl font-bold bg-amber-100 dark:bg-amber-900/30 p-4 rounded-lg">
                             <span>Total:</span>

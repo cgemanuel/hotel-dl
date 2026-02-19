@@ -43,25 +43,20 @@
                     class="w-full"
                 />
             </div>
-
             <div>
                 <label class="block text-sm font-medium text-green-800 dark:text-green-200 mb-1">Fecha Inicio</label>
-                <input type="date"
-                       wire:model.live="fecha_inicio"
+                <input type="date" wire:model.live="fecha_inicio"
                        class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
             </div>
-
             <div>
                 <label class="block text-sm font-medium text-green-800 dark:text-green-200 mb-1">Fecha Fin</label>
-                <input type="date"
-                       wire:model.live="fecha_fin"
+                <input type="date" wire:model.live="fecha_fin"
                        class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
             </div>
-
             <div>
                 <label class="block text-sm font-medium text-green-800 dark:text-green-200 mb-1">Estado</label>
                 <select wire:model.live="estado_filtro"
-                         class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
+                        class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
                     <option value="">Todos</option>
                     <option value="confirmada">Confirmada</option>
                     <option value="pendiente">Pendiente</option>
@@ -69,7 +64,6 @@
                     <option value="completada">Completada</option>
                 </select>
             </div>
-
             <div class="flex items-end gap-2">
                 <button wire:click="limpiarFiltros"
                         class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors text-sm">
@@ -165,10 +159,10 @@
                         @php
                             $estadoClasses = match($reserva->estado) {
                                 'confirmada' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-                                'pendiente' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-                                'cancelada' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                                'pendiente'  => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                                'cancelada'  => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
                                 'completada' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-                                default => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                default      => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                             };
                         @endphp
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $estadoClasses }}">
@@ -183,16 +177,22 @@
 
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <div class="flex flex-col gap-1">
+
+                            {{-- Ver: todos los roles --}}
                             <button wire:click="ver({{ $reserva->idreservas }})"
                                     class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
                                 Ver
                             </button>
+
+                            {{-- Editar: solo si no está completada/cancelada --}}
                             @if($reserva->estado != 'completada' && $reserva->estado != 'cancelada')
                             <button type="button" wire:click.stop="editar({{ $reserva->idreservas }})"
                                     class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
                                 Editar
                             </button>
                             @endif
+
+                            {{-- Cancelar / Liberar: solo si está activa --}}
                             @if($reserva->estado == 'confirmada' || $reserva->estado == 'pendiente')
                             <button wire:click="eliminar({{ $reserva->idreservas }})"
                                     wire:confirm="¿Estás seguro de cancelar esta reserva?"
@@ -205,13 +205,14 @@
                                 Liberar
                             </button>
                             @endif
-                            @if(auth()->user()->rol === 'gerente')
+
+                            {{-- Eliminar permanente: todos los roles --}}
                             <button wire:click="eliminarPermanente({{ $reserva->idreservas }})"
-                                wire:confirm="⚠️ ADVERTENCIA: Esto eliminará la reserva PERMANENTEMENTE de la base de datos. ¿Continuar?"
-                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">
-                            Eliminar (Permanente)
+                                    wire:confirm="⚠️ ADVERTENCIA: Esto eliminará la reserva PERMANENTEMENTE de la base de datos. ¿Continuar?"
+                                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">
+                                Eliminar
                             </button>
-                            @endif
+
                         </div>
                     </td>
                 </tr>
@@ -229,38 +230,22 @@
         </table>
     </div>
 
-    {{-- Debug: Mostrar estado del modal --}}
-    @if($mostrarModalEstacionamiento)
-        <div class="fixed top-4 right-4 bg-yellow-500 text-black px-4 py-2 rounded z-50">
-            Modal activo - Espacios: {{ count($espacios_disponibles) }}
-        </div>
-    @endif
-
-    {{-- Modal de Estacionamiento CON VALIDACIÓN DE VEHÍCULO --}}
+    {{-- Modal de Estacionamiento --}}
     @if($mostrarModalEstacionamiento)
     <div class="fixed inset-0 z-[9999] overflow-y-auto" aria-labelledby="modal-estacionamiento" role="dialog" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-
-            {{-- Overlay oscuro --}}
             <div class="fixed inset-0 bg-gray-900 bg-opacity-75 dark:bg-black dark:bg-opacity-90 transition-opacity"
                 aria-hidden="true"
                 wire:click="cerrarModalEstacionamiento"></div>
-
-            {{-- Espaciador para centrar --}}
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-            {{-- Contenedor del modal --}}
             <div class="inline-block align-bottom bg-white dark:bg-zinc-900 rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative"
                 wire:click.stop>
-
-                {{-- Header --}}
                 <div class="bg-white dark:bg-zinc-900 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-zinc-700">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-white" id="modal-estacionamiento">
                             Asignar Espacio de Estacionamiento
                         </h3>
-                        <button wire:click="cerrarModalEstacionamiento"
-                                type="button"
+                        <button wire:click="cerrarModalEstacionamiento" type="button"
                                 class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -268,83 +253,54 @@
                         </button>
                     </div>
                 </div>
-
-                {{-- Body --}}
                 <div class="bg-white dark:bg-zinc-900 px-6 py-4 space-y-4">
-                    {{-- Selector de Espacio --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Selecciona un espacio disponible
                         </label>
-
                         <select wire:model.live="espacio_seleccionado"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
                             <option value="">Sin estacionamiento</option>
                             @forelse($espacios_disponibles as $espacio)
                                 <option value="{{ $espacio->no_espacio }}">
                                     Espacio {{ $espacio->no_espacio }}
-                                    @if($espacio->estado === 'disponible')
-                                        - Disponible
-                                    @else
-                                        - Asignado actualmente
-                                    @endif
+                                    @if($espacio->estado === 'disponible') - Disponible @else - Asignado actualmente @endif
                                 </option>
                             @empty
                                 <option disabled>No hay espacios disponibles</option>
                             @endforelse
                         </select>
-
                         <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                             <p>Total de espacios: {{ count($espacios_disponibles) }}</p>
                         </div>
                     </div>
-
-                    {{-- Mostrar campos de vehículo SOLO si hay espacio seleccionado --}}
                     @if($mostrar_form_vehiculo && $espacio_seleccionado)
                     <div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-800 space-y-4">
                         <h5 class="font-semibold text-blue-900 dark:text-blue-100">Datos del Vehículo</h5>
-
-                        {{-- Tipo de Vehículo --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Tipo de Vehículo *
-                            </label>
-                            <input type="text" wire:model="tipo_vehiculo_temp"
-                                placeholder="Ej: Sedán, SUV, Pickup"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
-                            @error('tipo_vehiculo_temp')
-                                <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
-                            @enderror
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Vehículo *</label>
+                            <input type="text" wire:model="tipo_vehiculo_temp" placeholder="Ej: Sedán, SUV, Pickup"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
+                            @error('tipo_vehiculo_temp') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
-
-                        {{-- Descripción del Vehículo --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Descripción del Vehículo
-                            </label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Descripción del Vehículo</label>
                             <textarea wire:model="descripcion_vehiculo_temp" rows="2"
-                                    placeholder="Marca, modelo, color, placas, etc."
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"></textarea>
-                            @error('descripcion_vehiculo_temp')
-                                <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
-                            @enderror
+                                      placeholder="Marca, modelo, color, placas, etc."
+                                      class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"></textarea>
+                            @error('descripcion_vehiculo_temp') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                     </div>
                     @endif
                 </div>
-
-                {{-- Footer --}}
                 <div class="bg-gray-50 dark:bg-zinc-800 px-6 py-4 flex flex-row-reverse gap-3">
-                    <button type="button"
-                            wire:click="guardarEstacionamiento"
-                            wire:loading.attr="disabled"
-                            class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button type="button" wire:click="guardarEstacionamiento" wire:loading.attr="disabled"
+                            class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none sm:text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         <span wire:loading.remove wire:target="guardarEstacionamiento">Guardar</span>
                         <span wire:loading wire:target="guardarEstacionamiento">Guardando...</span>
                     </button>
-                    <button type="button"
-                            wire:click="cerrarModalEstacionamiento"
-                            class="inline-flex justify-center rounded-md border border-gray-300 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-colors">
+                    <button type="button" wire:click="cerrarModalEstacionamiento"
+                            class="inline-flex justify-center rounded-md border border-gray-300 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 focus:outline-none sm:text-sm transition-colors">
                         Cancelar
                     </button>
                 </div>
