@@ -85,12 +85,17 @@
     @livewire('reservas.crear-reserva')
 
     @include('livewire.reservas.modal-ver', [
-        'mostrarModalVer' => $mostrarModalVer,
-        'reservaSeleccionada' => $reservaSeleccionada
+        'mostrarModalVer'      => $mostrarModalVer,
+        'reservaSeleccionada'  => $reservaSeleccionada,
     ])
 
     @include('livewire.reservas.modal-editar', [
-        'mostrarModalEditar' => $mostrarModalEditar
+        'mostrarModalEditar'              => $mostrarModalEditar,
+        'edit_metodo_pago'                => $edit_metodo_pago,
+        'edit_habitaciones_ids'           => $edit_habitaciones_ids,
+        'edit_habitaciones_disponibles'   => $edit_habitaciones_disponibles,
+        'espacios_disponibles'            => $espacios_disponibles,
+        'editando_id'                     => $editando_id,
     ])
 
     <div class="overflow-x-auto bg-white dark:bg-zinc-900 rounded-lg border-2 border-green-200 dark:border-green-800 shadow-lg">
@@ -121,7 +126,6 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex flex-col">
                             <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $reserva->nom_completo }}</span>
-                            <span class="text-xs text-zinc-500 dark:text-zinc-400">{{ $reserva->correo ?? $reserva->telefono }}</span>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">

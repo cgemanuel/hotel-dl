@@ -30,18 +30,18 @@ class Index extends Component
     public $descripcion_vehiculo_temp = '';
     public $mostrar_form_vehiculo = false;
 
-    public $editando_id;
-    public $edit_fecha_reserva;
-    public $edit_fecha_check_in;
-    public $edit_fecha_check_out;
-    public $edit_no_personas;
-    public $edit_estado;
-    public $edit_estacionamiento_no_espacio;
-    public $edit_total_reserva;
-    public $edit_tipo_vehiculo;
-    public $edit_descripcion_vehiculo;
+    public $editando_id = null;
+    public $edit_fecha_reserva = '';
+    public $edit_fecha_check_in = '';
+    public $edit_fecha_check_out = '';
+    public $edit_no_personas = 1;
+    public $edit_estado = '';
+    public $edit_estacionamiento_no_espacio = '';
+    public $edit_total_reserva = 0;
+    public $edit_tipo_vehiculo = '';
+    public $edit_descripcion_vehiculo = '';
     public $edit_nom_completo   = '';
-    public $edit_correo         = '';
+
     public $edit_metodo_pago    = '';
 
     // ── Habitaciones multi-selección ──
@@ -212,13 +212,7 @@ class Index extends Component
                 ->select(
                     'reservas.*',
                     'clientes.nom_completo',
-                    'clientes.telefono',
-                    'clientes.correo',
-                    'clientes.tipo_identificacion',
-                    'clientes.no_identificacion',
-                    'clientes.edad',
                     'clientes.direccion',
-                    'clientes.estado_origen',
                     'clientes.pais_origen',
                     'habitaciones.no_habitacion',
                     'habitaciones.tipo as tipo_habitacion',
@@ -258,7 +252,6 @@ class Index extends Component
             ->select(
                 'reservas.*',
                 'clientes.nom_completo',
-                'clientes.correo',
                 'plat_reserva.nombre_plataforma'
             )
             ->first();
@@ -275,8 +268,7 @@ class Index extends Component
         $this->edit_no_personas                 = $reserva->no_personas;
         $this->edit_estado                      = $reserva->estado;
         $this->edit_nom_completo                = $reserva->nom_completo;
-        $this->edit_correo                      = $reserva->correo ?? '';
-        $this->edit_metodo_pago                 = $reserva->metodo_pago;
+        $this->edit_metodo_pago                 = $reserva->metodo_pago ?? '';
         $this->edit_total_reserva               = $reserva->total_reserva;
         $this->edit_estacionamiento_no_espacio  = $reserva->estacionamiento_no_espacio;
         $this->edit_tipo_vehiculo               = $reserva->tipo_vehiculo;
@@ -320,8 +312,9 @@ class Index extends Component
             'edit_fecha_check_out', 'edit_no_personas', 'edit_estado',
             'edit_estacionamiento_no_espacio', 'edit_total_reserva',
             'edit_tipo_vehiculo', 'edit_descripcion_vehiculo',
-            'edit_nom_completo', 'edit_correo', 'edit_metodo_pago',
+            'edit_nom_completo', 'edit_metodo_pago',
             'edit_habitaciones_ids', 'edit_habitaciones_disponibles',
+            'espacios_disponibles',
         ]);
     }
 
@@ -334,7 +327,6 @@ class Index extends Component
             'edit_no_personas'       => 'required|integer|min:1',
             'edit_estado'            => 'required|in:pendiente,confirmada,cancelada,completada',
             'edit_nom_completo'      => 'required|min:3',
-            'edit_correo'            => 'nullable|email',
             'edit_metodo_pago'       => 'nullable',
             'edit_total_reserva'     => 'nullable|numeric|min:0',
             // ── Habitaciones ──
@@ -371,7 +363,6 @@ class Index extends Component
                     'descripcion_vehiculo'       => $reservaActual->descripcion_vehiculo,
                     'metodo_pago'                => $reservaActual->metodo_pago,
                     'nom_completo_cliente'       => $clienteActual->nom_completo ?? null,
-                    'correo_cliente'             => $clienteActual->correo ?? null,
                 ],
                 [
                     'fecha_reserva'              => $this->edit_fecha_reserva,
@@ -385,7 +376,6 @@ class Index extends Component
                     'descripcion_vehiculo'       => $this->edit_descripcion_vehiculo ?: null,
                     'metodo_pago'                => $this->edit_metodo_pago,
                     'nom_completo_cliente'       => $this->edit_nom_completo,
-                    'correo_cliente'             => $this->edit_correo,
                 ]
             );
 
@@ -429,7 +419,6 @@ class Index extends Component
                     ->where('idclientes', $reservaActual->clientes_idclientes)
                     ->update([
                         'nom_completo' => trim($this->edit_nom_completo),
-                        'correo'       => $this->edit_correo ?: null,
                     ]);
             }
 
@@ -445,7 +434,6 @@ class Index extends Component
             $paraAgregar  = array_diff($habitacionesNuevas, $habitacionesAnteriores);
             $paraEliminar = array_diff($habitacionesAnteriores, $habitacionesNuevas);
 
-            // Eliminar las que ya no están
             foreach ($paraEliminar as $habitacionId) {
                 DB::table('habitaciones_has_reservas')
                     ->where('reservas_idreservas', $this->editando_id)
@@ -457,7 +445,6 @@ class Index extends Component
                     ->update(['estado' => 'disponible']);
             }
 
-            // Agregar las nuevas
             foreach ($paraAgregar as $habitacionId) {
                 DB::table('habitaciones_has_reservas')->insert([
                     'habitaciones_idhabitacion' => $habitacionId,
@@ -501,7 +488,6 @@ class Index extends Component
                 DB::table('reservas')->where('idreservas', $id)
                     ->update(['estado' => 'cancelada', 'updated_at' => now()]);
 
-                // Liberar TODAS las habitaciones
                 $habitaciones = DB::table('habitaciones_has_reservas')
                     ->where('reservas_idreservas', $id)
                     ->pluck('habitaciones_idhabitacion');
@@ -545,7 +531,6 @@ class Index extends Component
                 DB::table('reservas')->where('idreservas', $id)
                     ->update(['estado' => 'completada', 'updated_at' => now()]);
 
-                // Liberar TODAS las habitaciones
                 $habitaciones = DB::table('habitaciones_has_reservas')
                     ->where('reservas_idreservas', $id)
                     ->pluck('habitaciones_idhabitacion');
@@ -590,7 +575,6 @@ class Index extends Component
                     'fecha_check_out'=> $reserva->fecha_check_out,
                 ]);
 
-                // Liberar TODAS las habitaciones
                 $habitaciones = DB::table('habitaciones_has_reservas')
                     ->where('reservas_idreservas', $id)
                     ->pluck('habitaciones_idhabitacion');
@@ -643,8 +627,6 @@ class Index extends Component
                 'reservas.tipo_vehiculo',
                 'reservas.descripcion_vehiculo',
                 'clientes.nom_completo',
-                'clientes.telefono',
-                'clientes.correo',
                 'plat_reserva.nombre_plataforma',
                 'plat_reserva.comision',
                 DB::raw('MAX(habitaciones.no_habitacion) as no_habitacion'),
@@ -655,8 +637,7 @@ class Index extends Component
                 'reservas.fecha_check_in', 'reservas.fecha_check_out', 'reservas.no_personas',
                 'reservas.estado', 'reservas.estacionamiento_no_espacio', 'reservas.total_reserva',
                 'reservas.tipo_vehiculo', 'reservas.descripcion_vehiculo',
-                'clientes.nom_completo', 'clientes.telefono', 'clientes.correo',
-                'plat_reserva.nombre_plataforma', 'plat_reserva.comision'
+                'clientes.nom_completo', 'plat_reserva.nombre_plataforma', 'plat_reserva.comision'
             );
 
         if ($this->search) {
@@ -681,6 +662,13 @@ class Index extends Component
 
         $reservas = $query->orderBy('reservas.idreservas', 'desc')->paginate(10);
 
-        return view('livewire.reservas.index', ['reservas' => $reservas]);
+        return view('livewire.reservas.index', [
+            'reservas'                    => $reservas,
+            'edit_metodo_pago'            => $this->edit_metodo_pago,
+            'edit_habitaciones_ids'       => $this->edit_habitaciones_ids,
+            'edit_habitaciones_disponibles' => $this->edit_habitaciones_disponibles,
+            'espacios_disponibles'        => $this->espacios_disponibles,
+            'editando_id'                 => $this->editando_id,
+        ]);
     }
 }

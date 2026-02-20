@@ -21,7 +21,6 @@ use Carbon\Carbon;
                 ->count();
 
             // ALERTAS: Reservas próximas a check-out (HOY)
-            // MODIFICADO: Se cambió telefono por correo
             $reservasCheckOutHoy = DB::table('reservas')
                 ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
                 ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
@@ -30,7 +29,6 @@ use Carbon\Carbon;
                     'reservas.idreservas',
                     'reservas.fecha_check_out',
                     'clientes.nom_completo',
-                    'clientes.correo',
                     DB::raw('GROUP_CONCAT(habitaciones.no_habitacion SEPARATOR ", ") as habitaciones')
                 )
                 ->whereDate('reservas.fecha_check_out', now())
@@ -39,12 +37,10 @@ use Carbon\Carbon;
                     'reservas.idreservas',
                     'reservas.fecha_check_out',
                     'clientes.nom_completo',
-                    'clientes.correo'
                 )
                 ->get();
 
             // ALERTAS: Reservas próximas a check-out (MAÑANA)
-            // MODIFICADO: Se cambió telefono por correo
             $reservasCheckOutManana = DB::table('reservas')
                 ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
                 ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
@@ -53,7 +49,6 @@ use Carbon\Carbon;
                     'reservas.idreservas',
                     'reservas.fecha_check_out',
                     'clientes.nom_completo',
-                    'clientes.correo',
                     DB::raw('GROUP_CONCAT(habitaciones.no_habitacion SEPARATOR ", ") as habitaciones')
                 )
                 ->whereDate('reservas.fecha_check_out', now()->addDay())
@@ -62,7 +57,6 @@ use Carbon\Carbon;
                     'reservas.idreservas',
                     'reservas.fecha_check_out',
                     'clientes.nom_completo',
-                    'clientes.correo'
                 )
                 ->get();
 
@@ -195,10 +189,6 @@ use Carbon\Carbon;
                                         {{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
                                     </p>
                                 </div>
-                                <div>
-                                    <p class="text-gray-500 dark:text-gray-400">Correo:</p>
-                                    <p class="font-medium text-gray-900 dark:text-white break-all">{{ $reserva->correo }}</p>
-                                </div>
                             </div>
                         </div>
                     @empty
@@ -245,10 +235,6 @@ use Carbon\Carbon;
                                     <p class="font-medium text-gray-900 dark:text-white">
                                         {{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
                                     </p>
-                                </div>
-                                <div>
-                                    <p class="text-gray-500 dark:text-gray-400">Correo:</p>
-                                    <p class="font-medium text-gray-900 dark:text-white break-all">{{ $reserva->correo }}</p>
                                 </div>
                             </div>
                         </div>

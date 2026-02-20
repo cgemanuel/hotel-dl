@@ -8,6 +8,7 @@
         <div class="flex flex-col gap-3">
             @foreach($espaciosIzquierda as $espacio)
                 @php
+                    $espacio = (object) $espacio;
                     $colores = [
                         'disponible' => 'bg-green-600 hover:bg-green-700',
                         'ocupado' => 'bg-red-600 hover:bg-red-700',
@@ -24,7 +25,7 @@
             @endforeach
         </div>
 
-        <!-- Centro - Representación visual -->
+        <!-- Centro -->
         <div class="hidden md:flex items-center justify-center">
             <div class="w-24 h-64 border-4 border-amber-500 rounded-lg bg-green-700 opacity-50 flex items-center justify-center">
                 <span class="text-amber-300 text-center text-sm font-bold">Entrada</span>
@@ -35,6 +36,7 @@
         <div class="flex flex-col gap-3">
             @foreach($espaciosDerecha as $espacio)
                 @php
+                    $espacio = (object) $espacio;
                     $colores = [
                         'disponible' => 'bg-green-600 hover:bg-green-700',
                         'ocupado' => 'bg-red-600 hover:bg-red-700',
@@ -57,14 +59,13 @@
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
             @click.self="@this.call('cerrarModal')">
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+
+                <!-- Header Modal -->
                 <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white">
                         Espacio {{ $espacioSeleccionado['numero'] }}
                     </h3>
-                    <button
-                        wire:click="cerrarModal"
-                        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                    >
+                    <button wire:click="cerrarModal" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -72,7 +73,7 @@
                 </div>
 
                 <div class="p-6">
-                    <!-- UNA SOLA FILA HORIZONTAL -->
+                    <!-- FILA HORIZONTAL DE TARJETAS -->
                     <div class="flex gap-6 overflow-x-auto pb-4">
 
                         <!-- Tarjeta 1: Estado y Controles -->
@@ -138,15 +139,6 @@
                                             </p>
                                         </div>
 
-                                        @if(isset($espacioSeleccionado['telefono']))
-                                        <div>
-                                            <p class="text-xs text-blue-700 dark:text-blue-300 font-medium">Teléfono</p>
-                                            <p class="font-bold text-base text-gray-900 dark:text-white mt-1">
-                                                {{ $espacioSeleccionado['telefono'] }}
-                                            </p>
-                                        </div>
-                                        @endif
-
                                         <div class="grid grid-cols-2 gap-4 pt-3 border-t-2 border-blue-200 dark:border-blue-700">
                                             <div>
                                                 <p class="text-xs text-blue-700 dark:text-blue-300 font-medium">Check-in</p>
@@ -154,7 +146,6 @@
                                                     {{ \Carbon\Carbon::parse($espacioSeleccionado['fecha_check_in'])->format('d/m/Y') }}
                                                 </p>
                                             </div>
-
                                             <div>
                                                 <p class="text-xs text-blue-700 dark:text-blue-300 font-medium">Check-out</p>
                                                 <p class="font-bold text-sm text-gray-900 dark:text-white mt-1">
@@ -166,7 +157,7 @@
                                 </div>
                             </div>
 
-                            <!-- Tarjeta 3: Datos del Vehículo -->
+                            <!-- Tarjeta 3: Vehículo -->
                             @php
                                 $reservaConVehiculo = DB::table('reservas')
                                     ->where('estacionamiento_no_espacio', $espacioSeleccionado['numero'])
@@ -209,6 +200,34 @@
                                     </div>
                                 </div>
                             @endif
+
+                            <!-- Tarjeta 4: Habitaciones -->
+                            @if(!empty($espacioSeleccionado['habitaciones']))
+                                <div class="flex-shrink-0 w-80">
+                                    <div class="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg border-2 border-purple-300 dark:border-purple-700 h-full">
+                                        <h4 class="font-semibold text-purple-900 dark:text-purple-100 mb-4 flex items-center gap-2 text-lg">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                            </svg>
+                                            Habitación(es)
+                                        </h4>
+                                        <div class="space-y-3">
+                                            @foreach($espacioSeleccionado['habitaciones'] as $hab)
+                                                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-purple-200 dark:border-purple-700 flex items-center gap-3">
+                                                    <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                        <span class="text-white font-bold text-sm">{{ $hab['no_habitacion'] }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-bold text-gray-900 dark:text-white text-sm">No. {{ $hab['no_habitacion'] }}</p>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400 capitalize">{{ $hab['tipo'] }}</p>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
                         @elseif($espacioSeleccionado['estado'] === 'disponible')
                             <div class="flex-shrink-0 w-80">
                                 <div class="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border-2 border-green-300 dark:border-green-700 h-full flex items-center justify-center">
@@ -223,9 +242,11 @@
                                 </div>
                             </div>
                         @endif
+
                     </div>
                 </div>
 
+                <!-- Footer Modal -->
                 <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 rounded-b-lg border-t-2 border-gray-200 dark:border-gray-600">
                     <button
                         wire:click="cerrarModal"

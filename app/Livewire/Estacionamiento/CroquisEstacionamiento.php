@@ -31,7 +31,6 @@ class CroquisEstacionamiento extends Component
                 'estacionamiento.no_espacio as numero',
                 'estacionamiento.estado',
                 'clientes.nom_completo',
-                'clientes.telefono',
                 'reservas.fecha_check_in',
                 'reservas.fecha_check_out'
             )
@@ -44,6 +43,29 @@ class CroquisEstacionamiento extends Component
     {
         $espacio = collect($this->espacios)->firstWhere('numero', $numero);
         $this->espacioSeleccionado = (array) $espacio;
+
+        // Obtener habitaciones vinculadas a la reserva de este espacio
+        $reserva = DB::table('reservas')
+            ->where('estacionamiento_no_espacio', $numero)
+            ->where('estado', 'confirmada')
+            ->first();
+
+        if ($reserva) {
+            $habitaciones = DB::table('habitaciones_has_reservas')
+                ->join('habitaciones', 'habitaciones.idhabitacion', '=', 'habitaciones_has_reservas.habitaciones_idhabitacion')
+                ->where('habitaciones_has_reservas.reservas_idreservas', $reserva->idreservas)
+                ->select('habitaciones.no_habitacion', 'habitaciones.tipo')
+                ->get();
+
+            // Convertir a array asociativo puro para que Livewire pueda serializarlo correctamente
+            $this->espacioSeleccionado['habitaciones'] = $habitaciones->map(fn($h) => [
+                'no_habitacion' => $h->no_habitacion,
+                'tipo'          => $h->tipo,
+            ])->toArray();
+        } else {
+            $this->espacioSeleccionado['habitaciones'] = [];
+        }
+
         $this->mostrarModal = true;
     }
 
@@ -56,12 +78,10 @@ class CroquisEstacionamiento extends Component
     public function cambiarEstadoEspacio($numero, $nuevoEstado)
     {
         try {
-            // Obtener estado anterior
             $espacio = DB::table('estacionamiento')
                 ->where('no_espacio', $numero)
                 ->first();
 
-            //  AUDITORÍA: Registrar cambio de estado
             \App\Services\AuditService::logUpdated(
                 'Estacionamiento',
                 $numero,
@@ -87,19 +107,8 @@ class CroquisEstacionamiento extends Component
         }
     }
 
-    public function getColorEstadoProperty()
-    {
-        $colores = [
-            'disponible' => 'bg-green-500 hover:bg-green-600',
-            'ocupado' => 'bg-red-500 hover:bg-red-600',
-        ];
-
-        //return $colores[$this->espacioSeleccionado['estado'] ?? 'disponible'] ?? 'bg-gray-500';
-    }
-
     public function render()
     {
-        // Separar espacios en dos grupos (izquierda y derecha)
         $mitad = ceil(count($this->espacios) / 2);
         $espaciosIzquierda = array_slice($this->espacios, 0, $mitad);
         $espaciosDerecha = array_slice($this->espacios, $mitad);

@@ -96,7 +96,7 @@
                         </div>
 
                         {{-- Acordeón: Habitaciones --}}
-                        <div class="border border-green-300 dark:border-green-700 rounded-lg overflow-hidden">
+                        <div class="border border-green-300 dark:border-green-500 rounded-lg overflow-hidden">
                             <button type="button"
                                     @click="seccionHabitaciones = !seccionHabitaciones"
                                     class="w-full flex items-center justify-between px-4 py-3 bg-green-100 dark:bg-green-800 hover:bg-green-200 dark:hover:bg-green-700 transition-colors">
@@ -230,17 +230,6 @@
                                        placeholder="Nombre completo del cliente"
                                        class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 @error('edit_nom_completo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div>
-                                <label for="edit_correo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Correo Electrónico
-                                    <span class="ml-1 text-xs font-normal text-blue-500 dark:text-blue-400">(contacto)</span>
-                                </label>
-                                <input type="email" id="edit_correo" wire:model="edit_correo"
-                                       placeholder="ejemplo@correo.com"
-                                       class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                @error('edit_correo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
                             <div>
