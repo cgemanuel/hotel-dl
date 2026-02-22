@@ -16,7 +16,37 @@
     {{-- Encabezado --}}
     <div class="px-2 md:px-4">
         <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Croquis de Habitaciones</h2>
-        <p class="text-gray-600 dark:text-gray-300 mb-6">Haz clic en una habitación para ver detalles</p>
+        <p class="text-gray-600 dark:text-gray-300 mb-4">Haz clic en una habitación para ver detalles</p>
+
+        {{-- ══════════════════════════════════════════════════════ --}}
+        {{-- SELECTOR DE FECHA (NUEVO)                             --}}
+        {{-- ══════════════════════════════════════════════════════ --}}
+        <div class="flex flex-wrap items-center gap-3 mb-5 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span class="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                    Ver disponibilidad para:
+                </span>
+            </div>
+
+            <input
+                type="date"
+                wire:model.live="fechaConsulta"
+                class="px-3 py-2 border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+
+            <button
+                wire:click="irAHoy"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors"
+            >
+                Ir a Hoy
+            </button>
+
+
+        </div>
 
         {{-- Botones de plantas --}}
         <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -39,7 +69,13 @@
 
     {{-- Panel de Resumen por Planta --}}
     <div class="bg-gray-800 bg-opacity-30 rounded-xl p-6 mb-8 mx-2 md:mx-4">
-        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Estado de Habitaciones</h3>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-1">Estado de Habitaciones</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+            Para el día
+            <span class="font-semibold text-blue-600 dark:text-blue-400">
+                {{ \Carbon\Carbon::parse($fechaConsulta ?: now())->locale('es')->isoFormat('D [de] MMMM [de] YYYY') }}
+            </span>
+        </p>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div class="bg-gray-700 bg-opacity-50 rounded-lg p-4">
                 <p class="text-gray-300 text-sm">Total de Habitaciones</p>
@@ -60,7 +96,7 @@
         </div>
     </div>
 
-    {{-- Cuadrícula de habitaciones (Mapa Visual) --}}
+    {{-- Cuadrícula de habitaciones --}}
     <div class="min-h-[400px] mb-8">
         @if(count($habitacionesActuales) > 0)
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
@@ -69,25 +105,25 @@
                         $estadoNormalizado = strtolower(str_replace(' ', '_', trim($habitacion->estado ?? '')));
 
                         if ($estadoNormalizado === 'disponible') {
-                            $bgClase = 'bg-green-800 hover:bg-green-900';
+                            $bgClase    = 'bg-green-800 hover:bg-green-900';
                             $borderClase = 'border-green-400';
-                            $textClase = 'text-white';
-                            $tagClase = 'bg-green-100 text-green-800';
+                            $textClase  = 'text-white';
+                            $tagClase   = 'bg-green-100 text-green-800';
                         } elseif ($estadoNormalizado === 'ocupada') {
-                            $bgClase = 'bg-red-800 hover:bg-red-700';
+                            $bgClase    = 'bg-red-800 hover:bg-red-700';
                             $borderClase = 'border-red-400';
-                            $textClase = 'text-white';
-                            $tagClase = 'bg-red-100 text-red-800';
+                            $textClase  = 'text-white';
+                            $tagClase   = 'bg-red-100 text-red-800';
                         } elseif (in_array($estadoNormalizado, ['en_mantenimiento', 'mantenimiento'])) {
-                            $bgClase = 'bg-yellow-500 hover:bg-yellow-600';
+                            $bgClase    = 'bg-yellow-500 hover:bg-yellow-600';
                             $borderClase = 'border-yellow-400';
-                            $textClase = 'text-white';
-                            $tagClase = 'bg-yellow-100 text-yellow-800';
+                            $textClase  = 'text-white';
+                            $tagClase   = 'bg-yellow-100 text-yellow-800';
                         } else {
-                            $bgClase = 'bg-gray-600 hover:bg-gray-700';
+                            $bgClase    = 'bg-gray-600 hover:bg-gray-700';
                             $borderClase = 'border-gray-400';
-                            $textClase = 'text-white';
-                            $tagClase = 'bg-gray-100 text-gray-800';
+                            $textClase  = 'text-white';
+                            $tagClase   = 'bg-gray-100 text-gray-800';
                         }
                     @endphp
 
@@ -120,13 +156,15 @@
 
                 {{-- Header --}}
                 <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-                        Habitación {{ $habitacionSeleccionada['no_habitacion'] }}
-                    </h3>
-                    <button
-                        wire:click="cerrarModal"
-                        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                    >
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+                            Habitación {{ $habitacionSeleccionada['no_habitacion'] }}
+                        </h3>
+                        <p class="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                            Consultando: {{ \Carbon\Carbon::parse($fechaConsulta ?: now())->locale('es')->isoFormat('D [de] MMMM [de] YYYY') }}
+                        </p>
+                    </div>
+                    <button wire:click="cerrarModal" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -148,7 +186,7 @@
 
                     {{-- Estado actual --}}
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Estado Actual</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Estado para la fecha consultada</p>
                         <div class="flex items-center gap-2 mb-3">
                             @php
                                 $modalEstado = strtolower(str_replace(' ', '_', trim($habitacionSeleccionada['estado'])));
@@ -165,44 +203,38 @@
                             </p>
                         </div>
 
-                        {{-- Botones para cambiar estado --}}
+                        {{-- Botones para cambiar estado físico (mantenimiento) --}}
                         <div class="flex flex-col gap-2 mt-4">
-                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cambiar Estado:</p>
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Cambiar estado físico:
+                                <span class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                                    (disponible/ocupada se calculan por reservas automáticamente)
+                                </span>
+                            </p>
                             <button
                                 wire:click="cambiarEstadoHabitacion({{ $habitacionSeleccionada['idhabitacion'] }}, 'disponible')"
                                 class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
-                                wire:confirm="¿Desea cambiar el estado a Disponible?"
+                                wire:confirm="¿Desea marcar como Disponible? Esto quitará el mantenimiento si lo tenía."
                             >
-                                Marcar como Disponible
-                            </button>
-                            <button
-                                wire:click="cambiarEstadoHabitacion({{ $habitacionSeleccionada['idhabitacion'] }}, 'ocupada')"
-                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm"
-                                wire:confirm="¿Desea cambiar el estado a Ocupada?"
-                            >
-                                Marcar como Ocupada
+                                Quitar Mantenimiento / Marcar Disponible
                             </button>
                             <button
                                 wire:click="cambiarEstadoHabitacion({{ $habitacionSeleccionada['idhabitacion'] }}, 'en_mantenimiento')"
                                 class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors text-sm"
-                                wire:confirm="¿Desea cambiar el estado a Mantenimiento?"
+                                wire:confirm="¿Desea poner en Mantenimiento?"
                             >
                                 Marcar en Mantenimiento
                             </button>
                         </div>
                     </div>
 
-                    {{-- ============================================================ --}}
-                    {{-- SECCIÓN DESPLEGABLE: RESERVA ACTUAL (con sub-secciones)      --}}
-                    {{-- ============================================================ --}}
+                    {{-- Reserva para esa fecha (si hay) --}}
                     @if($habitacionSeleccionada['estado'] === 'ocupada' && isset($habitacionSeleccionada['nom_completo']))
                         <hr class="my-4 dark:border-gray-700">
 
-                        {{-- Accordion principal: Reserva Actual --}}
                         <div class="rounded-xl overflow-hidden border border-blue-200 dark:border-blue-700 shadow-sm"
                              x-data="{ openReserva: true }">
 
-                            {{-- ── Encabezado desplegable ── --}}
                             <button
                                 @click="openReserva = !openReserva"
                                 class="w-full flex items-center justify-between px-5 py-4 bg-blue-600 hover:bg-blue-700 transition-colors text-left focus:outline-none"
@@ -212,7 +244,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                     </svg>
-                                    Reserva Actual
+                                    Reserva para este día
                                 </span>
                                 <svg class="w-5 h-5 text-white transform transition-transform duration-200"
                                      :class="openReserva ? 'rotate-180' : 'rotate-0'"
@@ -221,25 +253,20 @@
                                 </svg>
                             </button>
 
-                            {{-- ── Contenido desplegable ── --}}
-                            <div
-                                x-show="openReserva"
-                                x-transition:enter="transition ease-out duration-200"
-                                x-transition:enter-start="opacity-0 -translate-y-1"
-                                x-transition:enter-end="opacity-100 translate-y-0"
-                                x-transition:leave="transition ease-in duration-150"
-                                x-transition:leave-start="opacity-100 translate-y-0"
-                                x-transition:leave-end="opacity-0 -translate-y-1"
-                                class="bg-blue-50 dark:bg-blue-900/10 divide-y divide-blue-100 dark:divide-blue-800"
+                            <div x-show="openReserva"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 -translate-y-1"
+                                 class="bg-blue-50 dark:bg-blue-900/10 divide-y divide-blue-100 dark:divide-blue-800"
                             >
 
-                                {{-- ── SUB-SECCIÓN 1: Datos generales de la reserva ── --}}
+                                {{-- SUB-SECCIÓN 1: Datos del huésped --}}
                                 <div class="p-5" x-data="{ openDatos: true }">
-
-                                    <button
-                                        @click="openDatos = !openDatos"
-                                        class="w-full flex items-center justify-between mb-3 text-left focus:outline-none group"
-                                    >
+                                    <button @click="openDatos = !openDatos"
+                                            class="w-full flex items-center justify-between mb-3 text-left focus:outline-none">
                                         <h5 class="text-sm font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -254,10 +281,7 @@
                                         </svg>
                                     </button>
 
-                                    <div x-show="openDatos"
-                                         x-transition:enter="transition ease-out duration-150"
-                                         x-transition:enter-start="opacity-0"
-                                         x-transition:enter-end="opacity-100">
+                                    <div x-show="openDatos" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             @if(isset($habitacionSeleccionada['folio']))
                                                 <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
@@ -270,13 +294,6 @@
                                                 <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Cliente</p>
                                                 <p class="font-semibold text-gray-900 dark:text-white">{{ $habitacionSeleccionada['nom_completo'] }}</p>
                                             </div>
-
-                                            @if(isset($habitacionSeleccionada['correo']))
-                                                <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800 sm:col-span-2">
-                                                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Correo</p>
-                                                    <p class="font-medium text-gray-900 dark:text-white break-all">{{ $habitacionSeleccionada['correo'] }}</p>
-                                                </div>
-                                            @endif
 
                                             <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
                                                 <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Check-in</p>
@@ -295,21 +312,16 @@
                                     </div>
                                 </div>
 
-                                {{-- ── SUB-SECCIÓN 2: Servicios Adicionales ── --}}
+                                {{-- SUB-SECCIÓN 2: Servicios --}}
                                 <div class="p-5" x-data="{ openServicios: true }">
-
-                                    <button
-                                        @click="openServicios = !openServicios"
-                                        class="w-full flex items-center justify-between mb-3 text-left focus:outline-none"
-                                    >
+                                    <button @click="openServicios = !openServicios"
+                                            class="w-full flex items-center justify-between mb-3 text-left focus:outline-none">
                                         <h5 class="text-sm font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
-                                            {{-- Icono maleta/servicios --}}
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                       d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                             </svg>
                                             Servicios Adicionales
-                                            {{-- Badge con cantidad --}}
                                             @php $totalServicios = count($habitacionSeleccionada['servicios'] ?? []); @endphp
                                             <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold
                                                 {{ $totalServicios > 0 ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300' }}">
@@ -323,11 +335,7 @@
                                         </svg>
                                     </button>
 
-                                    <div x-show="openServicios"
-                                         x-transition:enter="transition ease-out duration-150"
-                                         x-transition:enter-start="opacity-0"
-                                         x-transition:enter-end="opacity-100">
-
+                                    <div x-show="openServicios" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                                         @if(isset($habitacionSeleccionada['servicios']) && count($habitacionSeleccionada['servicios']) > 0)
                                             <div class="bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-800 overflow-hidden">
                                                 <ul class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -349,11 +357,7 @@
                                                         </li>
                                                     @endforeach
                                                 </ul>
-
-                                                {{-- Total sólo si hay precios --}}
-                                                @php
-                                                    $totalPrecio = collect($habitacionSeleccionada['servicios'])->sum('precio');
-                                                @endphp
+                                                @php $totalPrecio = collect($habitacionSeleccionada['servicios'])->sum('precio'); @endphp
                                                 @if($totalPrecio > 0)
                                                     <div class="bg-gray-50 dark:bg-zinc-700/50 px-4 py-2 flex justify-end items-center gap-2">
                                                         <span class="text-xs text-gray-500 dark:text-gray-400">Total Servicios:</span>
@@ -365,25 +369,17 @@
                                             </div>
                                         @else
                                             <div class="flex items-center gap-2 px-3 py-4 bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-800 text-gray-500 dark:text-gray-400">
-                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                                </svg>
-                                                <span class="text-sm italic">No hay servicios adicionales registrados para esta reserva.</span>
+                                                <span class="text-sm italic">No hay servicios adicionales registrados.</span>
                                             </div>
                                         @endif
                                     </div>
                                 </div>
 
-                                {{-- ── SUB-SECCIÓN 3: Datos del Vehículo ── --}}
+                                {{-- SUB-SECCIÓN 3: Vehículo --}}
                                 <div class="p-5" x-data="{ openVehiculo: true }">
-
-                                    <button
-                                        @click="openVehiculo = !openVehiculo"
-                                        class="w-full flex items-center justify-between mb-3 text-left focus:outline-none"
-                                    >
+                                    <button @click="openVehiculo = !openVehiculo"
+                                            class="w-full flex items-center justify-between mb-3 text-left focus:outline-none">
                                         <h5 class="text-sm font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
-                                            {{-- Icono auto --}}
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                       d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -391,15 +387,10 @@
                                                       d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2m0 0h10m-10 0H3m10 0h3m0 0l3-3m-3 3V6a1 1 0 011-1h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V16" />
                                             </svg>
                                             Datos del Vehículo
-                                            {{-- Indicador si hay o no vehículo --}}
-                                            @if(!empty($habitacionSeleccionada['vehiculo_tipo']) || !empty($habitacionSeleccionada['vehiculo_descripcion']))
-                                                <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500 text-white">
-                                                    Registrado
-                                                </span>
+                                            @if(!empty($habitacionSeleccionada['vehiculo_tipo']))
+                                                <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500 text-white">Registrado</span>
                                             @else
-                                                <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                                                    Sin registro
-                                                </span>
+                                                <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Sin registro</span>
                                             @endif
                                         </h5>
                                         <svg class="w-4 h-4 text-blue-500 transform transition-transform duration-150"
@@ -409,51 +400,24 @@
                                         </svg>
                                     </button>
 
-                                    <div x-show="openVehiculo"
-                                         x-transition:enter="transition ease-out duration-150"
-                                         x-transition:enter-start="opacity-0"
-                                         x-transition:enter-end="opacity-100">
-
+                                    <div x-show="openVehiculo" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                                         @if(!empty($habitacionSeleccionada['vehiculo_tipo']) || !empty($habitacionSeleccionada['vehiculo_descripcion']))
-                                            <div class="bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-800 overflow-hidden">
-                                                <div class="divide-y divide-gray-100 dark:divide-gray-700">
-
-                                                    @if(!empty($habitacionSeleccionada['vehiculo_tipo']))
-                                                        <div class="flex items-center justify-between px-4 py-3">
-                                                            <div class="flex items-center gap-2">
-                                                                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-                                                                </svg>
-                                                                <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">Tipo</span>
-                                                            </div>
-                                                            <span class="text-sm font-semibold text-gray-900 dark:text-white capitalize">
-                                                                {{ $habitacionSeleccionada['vehiculo_tipo'] }}
-                                                            </span>
-                                                        </div>
-                                                    @endif
-
-                                                    @if(!empty($habitacionSeleccionada['vehiculo_descripcion']))
-                                                        <div class="flex items-start justify-between px-4 py-3">
-                                                            <div class="flex items-center gap-2">
-                                                                <svg class="w-4 h-4 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-                                                                </svg>
-                                                                <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">Descripción</span>
-                                                            </div>
-                                                            <span class="text-sm font-medium text-gray-900 dark:text-white text-right max-w-[55%]">
-                                                                {{ $habitacionSeleccionada['vehiculo_descripcion'] }}
-                                                            </span>
-                                                        </div>
-                                                    @endif
-
-                                                </div>
+                                            <div class="bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
+                                                @if(!empty($habitacionSeleccionada['vehiculo_tipo']))
+                                                    <div class="flex items-center justify-between px-4 py-3">
+                                                        <span class="text-xs text-gray-500 uppercase font-medium">Tipo</span>
+                                                        <span class="text-sm font-semibold text-gray-900 dark:text-white capitalize">{{ $habitacionSeleccionada['vehiculo_tipo'] }}</span>
+                                                    </div>
+                                                @endif
+                                                @if(!empty($habitacionSeleccionada['vehiculo_descripcion']))
+                                                    <div class="flex items-start justify-between px-4 py-3">
+                                                        <span class="text-xs text-gray-500 uppercase font-medium">Descripción</span>
+                                                        <span class="text-sm text-gray-900 dark:text-white text-right max-w-[55%]">{{ $habitacionSeleccionada['vehiculo_descripcion'] }}</span>
+                                                    </div>
+                                                @endif
                                             </div>
                                         @else
                                             <div class="flex items-center gap-2 px-3 py-4 bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-800 text-gray-500 dark:text-gray-400">
-                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
                                                 <span class="text-sm italic">No se registró información de vehículo.</span>
                                             </div>
                                         @endif
@@ -461,15 +425,13 @@
                                 </div>
 
                             </div>
-                            {{-- /Fin contenido accordion principal --}}
                         </div>
-                        {{-- /Fin accordion Reserva Actual --}}
 
                     @elseif($habitacionSeleccionada['estado'] === 'disponible')
                         <p class="text-center py-4 text-green-600 dark:text-green-400 font-semibold">
-                            Habitación disponible para reservar
+                            Habitación disponible para esta fecha
                         </p>
-                    @elseif($habitacionSeleccionada['estado'] === 'en_mantenimiento')
+                    @elseif(in_array($habitacionSeleccionada['estado'], ['en_mantenimiento', 'mantenimiento']))
                         <p class="text-center py-4 text-yellow-600 dark:text-yellow-400 font-semibold">
                             En mantenimiento
                         </p>
@@ -477,7 +439,7 @@
 
                     <hr class="dark:border-gray-700">
 
-                    {{-- Botón para ver historial --}}
+                    {{-- Botón historial --}}
                     <button
                         wire:click="toggleHistorial"
                         class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
@@ -488,38 +450,29 @@
                         {{ $mostrarHistorial ? 'Ocultar Historial' : 'Ver Historial de Reservas' }}
                     </button>
 
-                    {{-- Mini tabla de historial --}}
                     @if($mostrarHistorial)
                         <div class="mt-4 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                             <div class="bg-indigo-600 text-white px-4 py-2 font-semibold">
                                 Historial de Reservas
                             </div>
-
                             @if(count($historialReservas) > 0)
                                 <div class="overflow-x-auto">
                                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                         <thead class="bg-gray-50 dark:bg-gray-800">
                                             <tr>
-                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Folio</th>
-                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cliente</th>
-                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Check-in</th>
-                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Check-out</th>
-                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estado</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Folio</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check-in</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check-out</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                                             </tr>
                                         </thead>
                                         <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                                             @foreach($historialReservas as $reserva)
                                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                                <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">
-                                                    {{ $reserva->folio ?? 'N/A' }}
-                                                </td>
+                                                <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $reserva->folio ?? 'N/A' }}</td>
                                                 <td class="px-3 py-2 text-sm">
-                                                    <div class="text-gray-900 dark:text-white font-medium">
-                                                        {{ $reserva->nom_completo }}
-                                                    </div>
-                                                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                        {{ $reserva->correo ?? $reserva->telefono }}
-                                                    </div>
+                                                    <div class="text-gray-900 dark:text-white font-medium">{{ $reserva->nom_completo }}</div>
                                                 </td>
                                                 <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">
                                                     {{ \Carbon\Carbon::parse($reserva->fecha_check_in)->format('d/m/Y') }}
@@ -552,10 +505,8 @@
 
                 {{-- Footer --}}
                 <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 rounded-b-lg sticky bottom-0">
-                    <button
-                        wire:click="cerrarModal"
-                        class="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
-                    >
+                    <button wire:click="cerrarModal"
+                            class="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors">
                         Cerrar
                     </button>
                 </div>

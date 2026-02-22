@@ -5,6 +5,7 @@
          open: @json($mostrarModalEditar),
          seccionFechas: true,
          seccionHabitaciones: false,
+         seccionCliente: true,
          seccionEstado: true
      }"
      @keydown.escape="@this.call('cerrarModalEditar')">
@@ -35,9 +36,7 @@
             <div class="flex-grow overflow-y-auto px-4 py-4 sm:px-6 bg-white dark:bg-zinc-900" style="max-height: calc(90vh - 160px);">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                    {{-- ══════════════════════════════════════════════════════════════════ --}}
-                    {{-- Columna izquierda                                                 --}}
-                    {{-- ══════════════════════════════════════════════════════════════════ --}}
+                    {{-- ══ Columna izquierda ══ --}}
                     <div class="space-y-4">
 
                         {{-- Acordeón: Fechas y Personas --}}
@@ -52,44 +51,94 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
-
-                            <div x-show="seccionFechas" x-collapse
-                                 class="px-4 py-4 space-y-4 bg-white dark:bg-zinc-900">
-
+                            <div x-show="seccionFechas" x-collapse class="px-4 py-4 space-y-4 bg-white dark:bg-zinc-900">
                                 <div>
-                                    <label for="edit_fecha_reserva" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Fecha de Reserva *</label>
-                                    <input type="date" id="edit_fecha_reserva" wire:model="edit_fecha_reserva"
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Fecha de Reserva *</label>
+                                    <input type="date" wire:model="edit_fecha_reserva"
                                            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     @error('edit_fecha_reserva') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
-
                                 <div>
-                                    <label for="edit_fecha_check_in" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Fecha Check-in *</label>
-                                    <input type="date" id="edit_fecha_check_in" wire:model="edit_fecha_check_in"
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Fecha Check-in *</label>
+                                    <input type="date" wire:model="edit_fecha_check_in"
                                            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     @error('edit_fecha_check_in') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
-
                                 <div>
-                                    <label for="edit_fecha_check_out" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Fecha Check-out *</label>
-                                    <input type="date" id="edit_fecha_check_out" wire:model="edit_fecha_check_out"
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Fecha Check-out *</label>
+                                    <input type="date" wire:model="edit_fecha_check_out"
                                            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     @error('edit_fecha_check_out') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
-
                                 <div>
-                                    <label for="edit_no_personas" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Número de Personas *</label>
-                                    <input type="number" id="edit_no_personas" wire:model="edit_no_personas" min="1"
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Número de Personas *</label>
+                                    <input type="number" wire:model="edit_no_personas" min="1"
                                            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     @error('edit_no_personas') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
-
                                 <div>
-                                    <label for="edit_total_reserva" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Total de la Reserva *</label>
-                                    <input type="number" id="edit_total_reserva" wire:model="edit_total_reserva" min="0" step="0.01"
-                                           class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                           placeholder="0.00">
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Total de la Reserva *</label>
+                                    <input type="number" wire:model="edit_total_reserva" min="0" step="0.01" placeholder="0.00"
+                                           class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     @error('edit_total_reserva') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Acordeón: Datos del Cliente --}}
+                        <div class="border border-blue-300 dark:border-blue-600 rounded-lg overflow-hidden">
+                            <button type="button"
+                                    @click="seccionCliente = !seccionCliente"
+                                    class="w-full flex items-center justify-between px-4 py-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-blue-700 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                    <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100">Datos del Cliente</h4>
+                                </div>
+                                <svg class="h-5 w-5 text-blue-700 dark:text-blue-300 transition-transform duration-200"
+                                     :class="{ 'rotate-180': seccionCliente }"
+                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div x-show="seccionCliente" x-collapse class="px-4 py-4 space-y-4 bg-white dark:bg-zinc-900">
+
+                                {{-- Nombre --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Nombre Completo *</label>
+                                    <input type="text" wire:model="edit_nom_completo" placeholder="Nombre completo del cliente"
+                                           class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @error('edit_nom_completo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+
+                                {{-- Tipo de identificación --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Tipo de Identificación</label>
+                                    <select wire:model="edit_tipo_identificacion"
+                                            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">Seleccionar...</option>
+                                        <option value="INE">INE</option>
+                                        <option value="Pasaporte">Pasaporte</option>
+                                        <option value="Licencia">Licencia</option>
+                                    </select>
+                                    @error('edit_tipo_identificacion') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+
+                                {{-- Dirección --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Dirección</label>
+                                    <input type="text" wire:model="edit_direccion" placeholder="Calle, número, colonia"
+                                           class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @error('edit_direccion') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+
+                                {{-- País de origen --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">País de Origen</label>
+                                    <input type="text" wire:model="edit_pais_origen" placeholder="Ej: México"
+                                           class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @error('edit_pais_origen') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
 
                             </div>
@@ -108,8 +157,7 @@
                                         Habitaciones
                                         <span x-data="{ count: @js(count($edit_habitaciones_ids ?? [])) }"
                                               x-text="count > 0 ? '(' + count + ')' : ''"
-                                              class="text-xs font-normal">
-                                        </span>
+                                              class="text-xs font-normal"></span>
                                     </h4>
                                 </div>
                                 <svg class="h-5 w-5 text-green-700 dark:text-green-300 transition-transform duration-200"
@@ -118,12 +166,10 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
-
                             <div x-show="seccionHabitaciones" x-collapse
                                  class="px-4 py-4 bg-white dark:bg-zinc-900"
                                  x-data="{
                                      sel: @js($edit_habitaciones_ids ?? []),
-
                                      toggle(id) {
                                          const n = parseInt(id);
                                          const idx = this.sel.indexOf(n);
@@ -131,45 +177,33 @@
                                          else { this.sel.splice(idx, 1); }
                                          $wire.set('edit_habitaciones_ids', this.sel, false);
                                      },
-
                                      has(id) { return this.sel.includes(parseInt(id)); }
-                                 }"
-                            >
+                                 }">
                                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                                     Selecciona habitaciones *
                                     <span class="ml-1 text-xs font-normal text-blue-500 dark:text-blue-400">(agregar o quitar)</span>
                                 </label>
-
                                 @error('edit_habitaciones_ids')
                                     <p class="mb-2 text-red-500 text-xs">{{ $message }}</p>
                                 @enderror
-
-                                {{-- Contador --}}
                                 <div class="mb-2">
                                     <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
                                           :class="sel.length > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'"
                                           x-text="sel.length === 0 ? '⚠ Ninguna seleccionada' : sel.length + (sel.length === 1 ? ' habitación' : ' habitaciones')">
                                     </span>
                                 </div>
-
-                                {{-- Grid de botones --}}
                                 <div class="grid grid-cols-2 gap-1.5 p-2 rounded-lg border-2 transition-colors"
                                      :class="sel.length > 0 ? 'border-green-400 bg-green-50 dark:bg-green-900/10' : 'border-red-300 bg-red-50 dark:bg-red-900/10'">
-
                                     @if(isset($edit_habitaciones_disponibles) && count($edit_habitaciones_disponibles) > 0)
                                         @foreach($edit_habitaciones_disponibles as $hab)
-                                        <button
-                                            type="button"
-                                            @click="toggle({{ $hab->idhabitacion }})"
-                                            class="flex items-center gap-1.5 p-2 rounded-lg transition-all duration-150 text-left w-full focus:outline-none text-sm"
-                                            :class="has({{ $hab->idhabitacion }})
-                                                ? 'bg-green-600 text-white shadow ring-2 ring-green-400'
-                                                : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'"
-                                        >
+                                        <button type="button" @click="toggle({{ $hab->idhabitacion }})"
+                                                class="flex items-center gap-1.5 p-2 rounded-lg transition-all duration-150 text-left w-full focus:outline-none text-sm"
+                                                :class="has({{ $hab->idhabitacion }})
+                                                    ? 'bg-green-600 text-white shadow ring-2 ring-green-400'
+                                                    : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'">
                                             <span class="flex-shrink-0 w-4 h-4 rounded flex items-center justify-center"
                                                   :class="has({{ $hab->idhabitacion }}) ? 'bg-white/30' : 'bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600'">
-                                                <svg x-show="has({{ $hab->idhabitacion }})"
-                                                     class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg x-show="has({{ $hab->idhabitacion }})" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                                                 </svg>
                                             </span>
@@ -191,9 +225,7 @@
 
                     </div>
 
-                    {{-- ══════════════════════════════════════════════════════════════════ --}}
-                    {{-- Columna derecha: Estado y Servicios                               --}}
-                    {{-- ══════════════════════════════════════════════════════════════════ --}}
+                    {{-- ══ Columna derecha: Estado, Plataforma, Vehículo ══ --}}
                     <div class="border border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden">
                         <button type="button"
                                 @click="seccionEstado = !seccionEstado"
@@ -205,13 +237,12 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
+                        <div x-show="seccionEstado" x-collapse class="px-4 py-4 space-y-4 bg-white dark:bg-zinc-900">
 
-                        <div x-show="seccionEstado" x-collapse
-                             class="px-4 py-4 space-y-4 bg-white dark:bg-zinc-900">
-
+                            {{-- Estado --}}
                             <div>
-                                <label for="edit_estado" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Estado *</label>
-                                <select id="edit_estado" wire:model="edit_estado"
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Estado *</label>
+                                <select wire:model="edit_estado"
                                         class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     <option value="">Seleccionar...</option>
                                     <option value="pendiente">Pendiente</option>
@@ -221,23 +252,28 @@
                                 @error('edit_estado') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
+                            {{-- Plataforma --}}
                             <div>
-                                <label for="edit_nom_completo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Cliente
-                                    <span class="ml-1 text-xs font-normal text-blue-500 dark:text-blue-400">(puedes corregir el nombre)</span>
-                                </label>
-                                <input type="text" id="edit_nom_completo" wire:model="edit_nom_completo"
-                                       placeholder="Nombre completo del cliente"
-                                       class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                @error('edit_nom_completo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Plataforma de Reserva</label>
+                                <select wire:model="edit_plataforma_id"
+                                        class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Sin plataforma (directa)</option>
+                                    @foreach($plataformas ?? [] as $plat)
+                                        <option value="{{ $plat->idplat_reserva }}">
+                                            {{ $plat->nombre_plataforma }} ({{ $plat->comision }}%)
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('edit_plataforma_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
+                            {{-- Método de pago --}}
                             <div>
-                                <label for="edit_metodo_pago" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                                     Método de Pago
                                     <span class="ml-1 text-xs font-normal text-blue-500 dark:text-blue-400">(actualiza si aparece "Tarjeta")</span>
                                 </label>
-                                <select id="edit_metodo_pago" wire:model.live="edit_metodo_pago"
+                                <select wire:model.live="edit_metodo_pago"
                                         class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     <option value="">Seleccionar...</option>
                                     <option value="efectivo">Efectivo</option>
@@ -250,7 +286,6 @@
                                     @endif
                                 </select>
                                 @error('edit_metodo_pago') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-
                                 @if($edit_metodo_pago === 'tarjeta')
                                 <p class="mt-1 flex items-start gap-1 text-xs text-amber-600 dark:text-amber-400">
                                     <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -261,11 +296,10 @@
                                 @endif
                             </div>
 
+                            {{-- Estacionamiento --}}
                             <div>
-                                <label for="edit_estacionamiento_no_espacio" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Espacio de Estacionamiento
-                                </label>
-                                <select id="edit_estacionamiento_no_espacio" wire:model="edit_estacionamiento_no_espacio"
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Espacio de Estacionamiento</label>
+                                <select wire:model="edit_estacionamiento_no_espacio"
                                         class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     <option value="">Sin estacionamiento</option>
                                     @foreach($espacios_disponibles ?? [] as $espacio)
@@ -278,24 +312,26 @@
                                 @error('edit_estacionamiento_no_espacio') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
+                            {{-- Tipo Vehículo --}}
                             <div>
-                                <label for="edit_tipo_vehiculo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Tipo de Vehículo</label>
-                                <input type="text" id="edit_tipo_vehiculo" wire:model="edit_tipo_vehiculo"
-                                       class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                       placeholder="Ej: Sedán, SUV, Camioneta">
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Tipo de Vehículo</label>
+                                <input type="text" wire:model="edit_tipo_vehiculo" placeholder="Ej: Sedán, SUV, Camioneta"
+                                       class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 @error('edit_tipo_vehiculo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
+                            {{-- Descripción Vehículo --}}
                             <div>
-                                <label for="edit_descripcion_vehiculo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Descripción del Vehículo</label>
-                                <textarea id="edit_descripcion_vehiculo" wire:model="edit_descripcion_vehiculo" rows="3"
-                                          class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                          placeholder="Ej: Toyota Corolla 2020, color gris, placas ABC-123"></textarea>
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Descripción del Vehículo</label>
+                                <textarea wire:model="edit_descripcion_vehiculo" rows="3"
+                                          placeholder="Ej: Toyota Corolla 2020, color gris, placas ABC-123"
+                                          class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
                                 @error('edit_descripcion_vehiculo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
                         </div>
                     </div>
+
                 </div>
             </div>
 

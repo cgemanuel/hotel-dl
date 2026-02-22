@@ -124,10 +124,12 @@
                                     @error('folio') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
 
+                                {{-- ── CORRECCIÓN CLAVE: wire:model.live para que recargue habitaciones al cambiar fecha ── --}}
+
                                 {{-- Check-in --}}
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha Check-in *</label>
-                                    <input type="date" wire:model="fecha_check_in"
+                                    <input type="date" wire:model.live="fecha_check_in"
                                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
                                     @error('fecha_check_in') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
@@ -135,7 +137,7 @@
                                 {{-- Check-out --}}
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha Check-out *</label>
-                                    <input type="date" wire:model="fecha_check_out"
+                                    <input type="date" wire:model.live="fecha_check_out"
                                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
                                     @error('fecha_check_out') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
@@ -175,11 +177,41 @@
                                          },
                                          has(id) { return this.sel.includes(parseInt(id)); }
                                      }"
+                                     {{-- Cuando Livewire recarga (al cambiar fecha), sincronizar sel con el nuevo valor de habitaciones_ids --}}
+                                     x-on:livewire:navigated.window="sel = @js($habitaciones_ids)"
                                 >
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Habitaciones *
                                         <span class="ml-1 text-xs font-normal text-gray-500 dark:text-gray-400">— puedes seleccionar una o varias</span>
                                     </label>
+
+                                    {{-- ── AVISO: muestra disponibilidad según fechas ── --}}
+                                    @if($fecha_check_in && $fecha_check_out)
+                                        <div class="mb-2 flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg px-3 py-2">
+                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            Mostrando habitaciones <strong class="mx-1">disponibles</strong> del
+                                            <strong class="ml-1">{{ \Carbon\Carbon::parse($fecha_check_in)->format('d/m/Y') }}</strong>
+                                            al
+                                            <strong class="ml-1">{{ \Carbon\Carbon::parse($fecha_check_out)->format('d/m/Y') }}</strong>
+                                        </div>
+                                    @elseif($fecha_check_in)
+                                        <div class="mb-2 flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg px-3 py-2">
+                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            Mostrando disponibilidad para check-in
+                                            <strong class="ml-1">{{ \Carbon\Carbon::parse($fecha_check_in)->format('d/m/Y') }}</strong>
+                                        </div>
+                                    @else
+                                        <div class="mb-2 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
+                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                            Selecciona primero las fechas para ver disponibilidad real por fecha
+                                        </div>
+                                    @endif
 
                                     @error('habitaciones_ids')
                                         <p class="mb-2 text-red-500 text-xs">{{ $message }}</p>
@@ -232,8 +264,16 @@
                                         </div>
 
                                     @else
-                                        <div class="p-4 text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg">
-                                            No hay habitaciones disponibles en este momento
+                                        <div class="p-4 text-center text-sm bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
+                                            @if($fecha_check_in)
+                                                <svg class="mx-auto w-8 h-8 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                                </svg>
+                                                <p class="font-semibold text-red-700 dark:text-red-400">No hay habitaciones disponibles para las fechas seleccionadas</p>
+                                                <p class="text-xs text-red-500 dark:text-red-400 mt-1">Todas las habitaciones están reservadas o en mantenimiento en ese período</p>
+                                            @else
+                                                <p class="text-gray-500 dark:text-gray-400">No hay habitaciones disponibles en este momento</p>
+                                            @endif
                                         </div>
                                     @endif
                                 </div>

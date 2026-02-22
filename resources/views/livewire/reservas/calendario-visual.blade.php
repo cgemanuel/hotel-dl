@@ -215,14 +215,6 @@
                                                     {{ $reserva->no_personas }}
                                                 </p>
                                             </div>
-                                            @if($reserva->telefono)
-                                            <div>
-                                                <p class="text-gray-600 dark:text-gray-400">Teléfono</p>
-                                                <p class="font-semibold text-gray-900 dark:text-white">
-                                                    {{ $reserva->telefono }}
-                                                </p>
-                                            </div>
-                                            @endif
                                         </div>
                                     </div>
 

@@ -50,34 +50,28 @@ class CalendarioVisual extends Component
     {
         $this->fechaSeleccionada = $fecha;
 
+        // Modificado para que solo busque las reservas que INICIAN (check-in) ese día
         $this->reservasDelDia = DB::table('reservas')
             ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
             ->leftJoin('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
             ->leftJoin('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
-            ->where(function($query) use ($fecha) {
-                $query->whereDate('reservas.fecha_check_in', $fecha)
-                      ->orWhereDate('reservas.fecha_check_out', $fecha)
-                      ->orWhere(function($q) use ($fecha) {
-                          $q->where('reservas.fecha_check_in', '<=', $fecha)
-                            ->where('reservas.fecha_check_out', '>=', $fecha);
-                      });
-            })
+            ->whereDate('reservas.fecha_check_in', $fecha)
             ->whereIn('reservas.estado', ['confirmada', 'pendiente'])
             ->select(
                 'reservas.*',
                 'clientes.nom_completo',
-                'clientes.telefono',
                 DB::raw('MAX(habitaciones.no_habitacion) as no_habitacion')
             )
             ->groupBy(
                 'reservas.idreservas', 'reservas.folio', 'reservas.fecha_reserva',
                 'reservas.fecha_check_in', 'reservas.fecha_check_out', 'reservas.no_personas',
                 'reservas.estado', 'reservas.metodo_pago', 'reservas.monto_efectivo',
-                'reservas.monto_tarjeta', 'reservas.monto_transferencia',
+                'reservas.monto_tarjeta', 'reservas.monto_transferencia', 'reservas.total_reserva',
+                'reservas.tipo_vehiculo', 'reservas.descripcion_vehiculo',
                 'reservas.estacionamiento_no_espacio', 'reservas.plat_reserva_idplat_reserva',
                 'reservas.clientes_idclientes', 'reservas.created_by', 'reservas.created_at',
                 'reservas.updated_at', 'reservas.facturacion',
-                'clientes.nom_completo', 'clientes.telefono'
+                'clientes.nom_completo'
             )
             ->get();
 
@@ -96,36 +90,25 @@ class CalendarioVisual extends Component
         $primerDia = Carbon::create($this->anioActual, $this->mesActual, 1);
         $ultimoDia = $primerDia->copy()->endOfMonth();
 
-        // CORREGIDO: ahora SI trae todas las reservas del mes completo
+        // Modificado para que solo traiga las reservas basándose en el mes de check-in
         $reservasMes = DB::table('reservas')
             ->whereIn('estado', ['confirmada', 'pendiente'])
-            ->where(function ($q) {
-                $q->whereYear('fecha_check_in', $this->anioActual)
-                  ->whereMonth('fecha_check_in', $this->mesActual);
-            })
-            ->orWhere(function ($q) {
-                $q->whereIn('estado', ['confirmada', 'pendiente'])
-                  ->whereYear('fecha_check_out', $this->anioActual)
-                  ->whereMonth('fecha_check_out', $this->mesActual);
-            })
-            ->select('fecha_check_in', 'fecha_check_out', 'estado')
+            ->whereYear('fecha_check_in', $this->anioActual)
+            ->whereMonth('fecha_check_in', $this->mesActual)
+            ->select('fecha_check_in', 'estado')
             ->get();
 
-        // Agrupar reservas por día (funciona bien)
+        // Agrupar reservas SOLO por el día de check-in (se eliminó el ciclo while de estancia)
         $reservasPorDia = [];
         foreach ($reservasMes as $reserva) {
             $inicio = Carbon::parse($reserva->fecha_check_in);
-            $fin = Carbon::parse($reserva->fecha_check_out);
 
-            while ($inicio->lte($fin)) {
-                if ($inicio->month == $this->mesActual && $inicio->year == $this->anioActual) {
-                    $dia = $inicio->day;
-                    if (!isset($reservasPorDia[$dia])) {
-                        $reservasPorDia[$dia] = 0;
-                    }
-                    $reservasPorDia[$dia]++;
+            if ($inicio->month == $this->mesActual && $inicio->year == $this->anioActual) {
+                $dia = $inicio->day;
+                if (!isset($reservasPorDia[$dia])) {
+                    $reservasPorDia[$dia] = 0;
                 }
-                $inicio->addDay();
+                $reservasPorDia[$dia]++;
             }
         }
 

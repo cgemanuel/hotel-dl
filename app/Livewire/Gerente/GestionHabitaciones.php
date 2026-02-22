@@ -21,7 +21,7 @@ class GestionHabitaciones extends Component
 
     protected $rules = [
         'no_habitacion' => 'required|integer|unique:habitaciones,no_habitacion',
-        'tipo' => 'required|string|in:individual,doble,suite',
+        'tipo' => 'required|string|in:individual,doble,suite,triple',
         'estado' => 'required|string|in:disponible,ocupada,en_mantenimiento',
         'planta' => 'required|string|in:Planta 1,Planta 2,Planta 3',
     ];
