@@ -31,6 +31,7 @@ class Index extends Component
     public $mostrar_form_vehiculo = false;
 
     public $editando_id = null;
+    public $edit_folio = '';          // ← NUEVO: folio editable
     public $edit_fecha_reserva = '';
     public $edit_fecha_check_in = '';
     public $edit_fecha_check_out = '';
@@ -210,8 +211,6 @@ class Index extends Component
         try {
             $reserva = DB::table('reservas')
                 ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
-                ->leftJoin('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
-                ->leftJoin('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
                 ->leftJoin('plat_reserva', 'reservas.plat_reserva_idplat_reserva', '=', 'plat_reserva.idplat_reserva')
                 ->leftJoin('estacionamiento', 'reservas.estacionamiento_no_espacio', '=', 'estacionamiento.no_espacio')
                 ->where('reservas.idreservas', $id)
@@ -221,8 +220,6 @@ class Index extends Component
                     'clientes.tipo_identificacion',
                     'clientes.direccion',
                     'clientes.pais_origen',
-                    'habitaciones.no_habitacion',
-                    'habitaciones.tipo as tipo_habitacion',
                     'plat_reserva.nombre_plataforma',
                     'plat_reserva.comision',
                     'estacionamiento.no_espacio'
@@ -272,6 +269,7 @@ class Index extends Component
         }
 
         $this->editando_id                      = $reserva->idreservas;
+        $this->edit_folio                       = $reserva->folio;           // ← NUEVO
         $this->edit_fecha_reserva               = $reserva->fecha_reserva;
         $this->edit_fecha_check_in              = $reserva->fecha_check_in;
         $this->edit_fecha_check_out             = $reserva->fecha_check_out;
@@ -324,7 +322,7 @@ class Index extends Component
     {
         $this->mostrarModalEditar = false;
         $this->reset([
-            'editando_id', 'edit_fecha_reserva', 'edit_fecha_check_in',
+            'editando_id', 'edit_folio', 'edit_fecha_reserva', 'edit_fecha_check_in',
             'edit_fecha_check_out', 'edit_no_personas', 'edit_estado',
             'edit_estacionamiento_no_espacio', 'edit_total_reserva',
             'edit_tipo_vehiculo', 'edit_descripcion_vehiculo',
@@ -338,6 +336,7 @@ class Index extends Component
     public function actualizarReserva()
     {
         $this->validate([
+            'edit_folio'             => 'required|string|max:50|unique:reservas,folio,' . $this->editando_id . ',idreservas',
             'edit_fecha_reserva'     => 'required|date',
             'edit_fecha_check_in'    => 'required|date',
             'edit_fecha_check_out'   => 'required|date|after:edit_fecha_check_in',
@@ -349,6 +348,8 @@ class Index extends Component
             'edit_habitaciones_ids'  => 'required|array|min:1',
             'edit_habitaciones_ids.*'=> 'exists:habitaciones,idhabitacion',
         ], [
+            'edit_folio.required'            => 'El folio es obligatorio',
+            'edit_folio.unique'              => 'Este folio ya está en uso por otra reserva',
             'edit_habitaciones_ids.required' => 'Debes seleccionar al menos una habitación',
             'edit_habitaciones_ids.min'      => 'Debes seleccionar al menos una habitación',
         ]);
@@ -368,6 +369,7 @@ class Index extends Component
                 'Reserva',
                 $this->editando_id,
                 [
+                    'folio'                      => $reservaActual->folio,
                     'fecha_reserva'              => $reservaActual->fecha_reserva,
                     'fecha_check_in'             => $reservaActual->fecha_check_in,
                     'fecha_check_out'            => $reservaActual->fecha_check_out,
@@ -381,6 +383,7 @@ class Index extends Component
                     'plataforma_id'              => $reservaActual->plat_reserva_idplat_reserva,
                 ],
                 [
+                    'folio'                      => $this->edit_folio,
                     'fecha_reserva'              => $this->edit_fecha_reserva,
                     'fecha_check_in'             => $this->edit_fecha_check_in,
                     'fecha_check_out'            => $this->edit_fecha_check_out,
@@ -416,6 +419,7 @@ class Index extends Component
             DB::table('reservas')
                 ->where('idreservas', $this->editando_id)
                 ->update([
+                    'folio'                       => $this->edit_folio,           // ← NUEVO
                     'fecha_reserva'               => $this->edit_fecha_reserva,
                     'fecha_check_in'              => $this->edit_fecha_check_in,
                     'fecha_check_out'             => $this->edit_fecha_check_out,
@@ -645,8 +649,10 @@ class Index extends Component
                 'clientes.nom_completo',
                 'plat_reserva.nombre_plataforma',
                 'plat_reserva.comision',
-                DB::raw('MAX(habitaciones.no_habitacion) as no_habitacion'),
-                DB::raw('MAX(habitaciones.tipo) as tipo_habitacion')
+                // ← CORRECCIÓN: GROUP_CONCAT para mostrar TODAS las habitaciones
+                DB::raw('GROUP_CONCAT(DISTINCT habitaciones.no_habitacion ORDER BY habitaciones.no_habitacion SEPARATOR ", ") as no_habitacion'),
+                DB::raw('GROUP_CONCAT(DISTINCT habitaciones.tipo ORDER BY habitaciones.no_habitacion SEPARATOR ", ") as tipo_habitacion'),
+                DB::raw('COUNT(DISTINCT habitaciones.idhabitacion) as total_habitaciones')
             )
             ->groupBy(
                 'reservas.idreservas', 'reservas.folio', 'reservas.fecha_reserva',

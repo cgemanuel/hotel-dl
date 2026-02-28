@@ -124,8 +124,6 @@
                                     @error('folio') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
 
-                                {{-- ── CORRECCIÓN CLAVE: wire:model.live para que recargue habitaciones al cambiar fecha ── --}}
-
                                 {{-- Check-in --}}
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha Check-in *</label>
@@ -177,7 +175,6 @@
                                          },
                                          has(id) { return this.sel.includes(parseInt(id)); }
                                      }"
-                                     {{-- Cuando Livewire recarga (al cambiar fecha), sincronizar sel con el nuevo valor de habitaciones_ids --}}
                                      x-on:livewire:navigated.window="sel = @js($habitaciones_ids)"
                                 >
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -185,7 +182,6 @@
                                         <span class="ml-1 text-xs font-normal text-gray-500 dark:text-gray-400">— puedes seleccionar una o varias</span>
                                     </label>
 
-                                    {{-- ── AVISO: muestra disponibilidad según fechas ── --}}
                                     @if($fecha_check_in && $fecha_check_out)
                                         <div class="mb-2 flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg px-3 py-2">
                                             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,13 +281,24 @@
                                     <select wire:model.live="metodo_pago"
                                             class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
                                         <option value="">Seleccionar...</option>
-                                        <option value="efectivo">Efectivo</option>
-                                        <option value="tarjeta_debito">Tarjeta de Débito</option>
-                                        <option value="tarjeta_credito">Tarjeta de Crédito</option>
-                                        <option value="transferencia">Transferencia</option>
-                                        <option value="combinado">Combinado</option>
+                                        <option value="efectivo">💵 Efectivo</option>
+                                        <option value="tarjeta_debito">💳 Tarjeta de Débito</option>
+                                        <option value="tarjeta_credito">💳 Tarjeta de Crédito</option>
+                                        <option value="transferencia">🏦 Transferencia</option>
+                                        <option value="combinado">🔀 Combinado</option>
+                                        <option value="cortesia">🎁 Cortesía</option>
                                     </select>
                                     @error('metodo_pago') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+
+                                    {{-- Aviso cuando se selecciona cortesía --}}
+                                    @if($metodo_pago === 'cortesia')
+                                        <div class="mt-2 flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg text-xs text-purple-700 dark:text-purple-300">
+                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
+                                            </svg>
+                                            Esta reserva se registrará como cortesía — sin cargo al huésped.
+                                        </div>
+                                    @endif
                                 </div>
 
                                 {{-- Total --}}

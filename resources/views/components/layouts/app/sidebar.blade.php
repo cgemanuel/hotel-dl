@@ -66,13 +66,6 @@
                 {{ __('Estacionamiento') }}
             </flux:navlist.item>
 
-            <flux:navlist.item icon="document-text"
-                :href="route('facturacion.index')"
-                :current="request()->routeIs('facturacion.*')"
-                wire:navigate>
-                {{ __('Facturación') }}
-            </flux:navlist.item>
-
             <flux:navlist.item icon="magnifying-glass-circle"
                 :href="route('reservas.calendario-visual')"
                 wire:navigate>

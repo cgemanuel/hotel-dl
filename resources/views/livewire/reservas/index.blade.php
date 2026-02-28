@@ -96,6 +96,7 @@
         'edit_habitaciones_disponibles'   => $edit_habitaciones_disponibles,
         'espacios_disponibles'            => $espacios_disponibles,
         'editando_id'                     => $editando_id,
+        'plataformas'                     => $plataformas,
     ])
 
     <div class="overflow-x-auto bg-white dark:bg-zinc-900 rounded-lg border-2 border-green-200 dark:border-green-800 shadow-lg">
@@ -104,7 +105,7 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Folio</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Cliente</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Habitación</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Habitación(es)</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Check-in</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Check-out</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Personas</th>
@@ -124,14 +125,26 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $reserva->nom_completo }}</span>
-                        </div>
+                        <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $reserva->nom_completo }}</span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                            Hab. {{ $reserva->no_habitacion }}
-                        </span>
+                    <td class="px-6 py-4">
+                        {{-- ← CORRECCIÓN: Muestra TODAS las habitaciones con GROUP_CONCAT --}}
+                        @php
+                            $habs = explode(', ', $reserva->no_habitacion ?? '');
+                            $tipos = explode(', ', $reserva->tipo_habitacion ?? '');
+                        @endphp
+                        <div class="flex flex-wrap gap-1">
+                            @foreach($habs as $idx => $hab)
+                                @if(trim($hab))
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                    Hab. {{ trim($hab) }}
+                                </span>
+                                @endif
+                            @endforeach
+                        </div>
+                        @if(isset($reserva->total_habitaciones) && $reserva->total_habitaciones > 1)
+                            <p class="text-xs text-gray-400 mt-1">{{ $reserva->total_habitaciones }} habitaciones</p>
+                        @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">
                         {{ \Carbon\Carbon::parse($reserva->fecha_check_in)->format('d/m/Y') }}
@@ -154,9 +167,7 @@
                             <span wire:loading.remove wire:target="asignarEstacionamiento({{ $reserva->idreservas }})">
                                 {{ $reserva->estacionamiento_no_espacio ? 'Espacio ' . $reserva->estacionamiento_no_espacio : 'Asignar' }}
                             </span>
-                            <span wire:loading wire:target="asignarEstacionamiento({{ $reserva->idreservas }})">
-                                Cargando...
-                            </span>
+                            <span wire:loading wire:target="asignarEstacionamiento({{ $reserva->idreservas }})">Cargando...</span>
                         </button>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -177,18 +188,22 @@
                         <div class="font-bold text-lg text-amber-700 dark:text-amber-400">
                             ${{ number_format($reserva->total_reserva, 2) }}
                         </div>
+                        {{-- ← Badge cortesía --}}
+                        @if(($reserva->metodo_pago ?? '') === 'cortesia')
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 mt-1">
+                                🎁 Cortesía
+                            </span>
+                        @endif
                     </td>
 
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <div class="flex flex-col gap-1">
 
-                            {{-- Ver: todos los roles --}}
                             <button wire:click="ver({{ $reserva->idreservas }})"
                                     class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
                                 Ver
                             </button>
 
-                            {{-- Editar: solo si no está completada/cancelada --}}
                             @if($reserva->estado != 'completada' && $reserva->estado != 'cancelada')
                             <button type="button" wire:click.stop="editar({{ $reserva->idreservas }})"
                                     class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
@@ -196,7 +211,6 @@
                             </button>
                             @endif
 
-                            {{-- Cancelar / Liberar: solo si está activa --}}
                             @if($reserva->estado == 'confirmada' || $reserva->estado == 'pendiente')
                             <button wire:click="eliminar({{ $reserva->idreservas }})"
                                     wire:confirm="¿Estás seguro de cancelar esta reserva?"
@@ -210,7 +224,6 @@
                             </button>
                             @endif
 
-                            {{-- Eliminar permanente: todos los roles --}}
                             <button wire:click="eliminarPermanente({{ $reserva->idreservas }})"
                                     wire:confirm="⚠️ ADVERTENCIA: Esto eliminará la reserva PERMANENTEMENTE de la base de datos. ¿Continuar?"
                                     class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">

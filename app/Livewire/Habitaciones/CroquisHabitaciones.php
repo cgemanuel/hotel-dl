@@ -59,6 +59,7 @@ class CroquisHabitaciones extends Component
      * Devuelve el estado REAL de una habitación para la fecha consultada.
      * - Si está en mantenimiento en la BD → "en_mantenimiento" (siempre)
      * - Si tiene una reserva activa que cubre esa fecha → "ocupada"
+     *   NOTA: el día de check-out ya cuenta como DISPONIBLE (se usa > en lugar de >=)
      * - De lo contrario → "disponible"
      */
     protected function calcularEstadoParaFecha(int $habitacionId, string $estadoBD): string
@@ -75,7 +76,7 @@ class CroquisHabitaciones extends Component
             ->where('habitaciones_has_reservas.habitaciones_idhabitacion', $habitacionId)
             ->whereIn('reservas.estado', ['confirmada', 'pendiente', 'ocupada', 'check_in', 'hospedada'])
             ->where('reservas.fecha_check_in', '<=', $fecha)
-            ->where('reservas.fecha_check_out', '>=', $fecha)
+            ->where('reservas.fecha_check_out', '>', $fecha)  // El día de check-out ya está disponible
             ->exists();
 
         return $tieneReserva ? 'ocupada' : 'disponible';
@@ -98,6 +99,7 @@ class CroquisHabitaciones extends Component
 
         // Habitaciones ocupadas PARA LA FECHA CONSULTADA
         // (tienen reserva activa que cubre esa fecha y NO están en mantenimiento)
+        // NOTA: el día de check-out ya cuenta como disponible (se usa > en lugar de >=)
         $this->ocupadas = DB::table('habitaciones')
             ->where('planta', $this->plantaActiva)
             ->whereNotIn('estado', ['en_mantenimiento', 'mantenimiento'])
@@ -107,7 +109,7 @@ class CroquisHabitaciones extends Component
                     ->join('reservas', 'habitaciones_has_reservas.reservas_idreservas', '=', 'reservas.idreservas')
                     ->whereIn('reservas.estado', ['confirmada', 'pendiente', 'ocupada', 'check_in', 'hospedada'])
                     ->where('reservas.fecha_check_in', '<=', $fecha)
-                    ->where('reservas.fecha_check_out', '>=', $fecha);
+                    ->where('reservas.fecha_check_out', '>', $fecha);  // El día de check-out ya está disponible
             })
             ->count();
 
@@ -138,12 +140,13 @@ class CroquisHabitaciones extends Component
             $estadoReal = $this->calcularEstadoParaFecha($hab->idhabitacion, $hab->estado);
 
             // Obtener reserva activa en esa fecha (si existe)
+            // NOTA: el día de check-out ya cuenta como disponible (se usa > en lugar de >=)
             $reservaActiva = DB::table('habitaciones_has_reservas')
                 ->join('reservas', 'habitaciones_has_reservas.reservas_idreservas', '=', 'reservas.idreservas')
                 ->where('habitaciones_has_reservas.habitaciones_idhabitacion', $hab->idhabitacion)
                 ->whereIn('reservas.estado', ['confirmada', 'pendiente', 'ocupada', 'check_in', 'hospedada'])
                 ->where('reservas.fecha_check_in', '<=', $fecha)
-                ->where('reservas.fecha_check_out', '>=', $fecha)
+                ->where('reservas.fecha_check_out', '>', $fecha)  // El día de check-out ya está disponible
                 ->select('reservas.idreservas as reserva_id')
                 ->first();
 
@@ -186,13 +189,14 @@ class CroquisHabitaciones extends Component
         $this->habitacionSeleccionada['servicios'] = [];
 
         // Reserva activa para la fecha consultada
+        // NOTA: el día de check-out ya cuenta como disponible (se usa > en lugar de >=)
         $reservaActiva = DB::table('habitaciones_has_reservas')
             ->join('reservas', 'habitaciones_has_reservas.reservas_idreservas', '=', 'reservas.idreservas')
             ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
             ->where('habitaciones_has_reservas.habitaciones_idhabitacion', $habitacionId)
             ->whereIn('reservas.estado', ['confirmada', 'pendiente', 'ocupada', 'check_in', 'hospedada'])
             ->where('reservas.fecha_check_in', '<=', $fecha)
-            ->where('reservas.fecha_check_out', '>=', $fecha)
+            ->where('reservas.fecha_check_out', '>', $fecha)  // El día de check-out ya está disponible
             ->select(
                 'reservas.idreservas',
                 'reservas.folio',

@@ -31,7 +31,6 @@ Route::middleware(['auth', 'role:recepcionista,gerente,superusuario'])->group(fu
     Route::get('/reservas', \App\Livewire\Reservas\Index::class)->name('reservas.index');
     Route::get('/estacionamiento', fn () => view('livewire.estacionamiento.index'))->name('estacionamiento.index');
     Route::get('/habitaciones', fn () => view('livewire.habitaciones.index'))->name('habitaciones.index');
-    Route::get('/facturacion', \App\Livewire\Facturacion\Index::class)->name('facturacion.index');
     Route::get('/servicios-adicionales', \App\Livewire\ServiciosAdicionales\Index::class)->name('servicios-adicionales.index');
     Route::get('/reportes/ingresos', \App\Livewire\Reportes\ReportesIngresos::class)->name('reportes.ingresos');
     Route::get('/reservas/calendario-visual', \App\Livewire\Reservas\CalendarioVisual::class)->name('reservas.calendario-visual');

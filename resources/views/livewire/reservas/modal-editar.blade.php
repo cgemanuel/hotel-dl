@@ -39,6 +39,22 @@
                     {{-- ══ Columna izquierda ══ --}}
                     <div class="space-y-4">
 
+                        {{-- Acordeón: Folio --}}
+                        <div class="border border-amber-300 dark:border-amber-600 rounded-lg overflow-hidden">
+                            <div class="px-4 py-3 bg-amber-50 dark:bg-amber-900/20">
+                                <label class="block text-sm font-semibold text-amber-900 dark:text-amber-100 mb-2 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                    </svg>
+                                    Folio de Reserva *
+                                </label>
+                                <input type="text" wire:model="edit_folio"
+                                       placeholder="Ej: RES-20250105-0001"
+                                       class="w-full px-3 py-2 border border-amber-300 dark:border-amber-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent font-mono text-sm">
+                                @error('edit_folio') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
                         {{-- Acordeón: Fechas y Personas --}}
                         <div class="border border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden">
                             <button type="button"
@@ -104,7 +120,6 @@
                             </button>
                             <div x-show="seccionCliente" x-collapse class="px-4 py-4 space-y-4 bg-white dark:bg-zinc-900">
 
-                                {{-- Nombre --}}
                                 <div>
                                     <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Nombre Completo *</label>
                                     <input type="text" wire:model="edit_nom_completo" placeholder="Nombre completo del cliente"
@@ -112,7 +127,6 @@
                                     @error('edit_nom_completo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
 
-                                {{-- Tipo de identificación --}}
                                 <div>
                                     <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Tipo de Identificación</label>
                                     <select wire:model="edit_tipo_identificacion"
@@ -125,7 +139,6 @@
                                     @error('edit_tipo_identificacion') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
 
-                                {{-- Dirección --}}
                                 <div>
                                     <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Dirección</label>
                                     <input type="text" wire:model="edit_direccion" placeholder="Calle, número, colonia"
@@ -133,7 +146,6 @@
                                     @error('edit_direccion') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
 
-                                {{-- País de origen --}}
                                 <div>
                                     <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">País de Origen</label>
                                     <input type="text" wire:model="edit_pais_origen" placeholder="Ej: México"
@@ -267,11 +279,10 @@
                                 @error('edit_plataforma_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
-                            {{-- Método de pago --}}
+                            {{-- ── Método de pago CON CORTESÍA ── --}}
                             <div>
                                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                                     Método de Pago
-                                    <span class="ml-1 text-xs font-normal text-blue-500 dark:text-blue-400">(actualiza si aparece "Tarjeta")</span>
                                 </label>
                                 <select wire:model.live="edit_metodo_pago"
                                         class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm dark:bg-zinc-800 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -281,11 +292,23 @@
                                     <option value="tarjeta_credito">Tarjeta de Crédito</option>
                                     <option value="transferencia">Transferencia</option>
                                     <option value="combinado">Combinado</option>
+                                    <option value="cortesia">🎁 Cortesía</option>
                                     @if($edit_metodo_pago === 'tarjeta')
                                         <option value="tarjeta">Tarjeta (valor antiguo)</option>
                                     @endif
                                 </select>
                                 @error('edit_metodo_pago') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+
+                                {{-- Badge informativo si es cortesía --}}
+                                @if($edit_metodo_pago === 'cortesia')
+                                <div class="mt-2 flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg">
+                                    <svg class="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
+                                    </svg>
+                                    <span class="text-xs text-purple-700 dark:text-purple-300 font-medium">Reserva marcada como cortesía — sin cargo al huésped</span>
+                                </div>
+                                @endif
+
                                 @if($edit_metodo_pago === 'tarjeta')
                                 <p class="mt-1 flex items-start gap-1 text-xs text-amber-600 dark:text-amber-400">
                                     <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">

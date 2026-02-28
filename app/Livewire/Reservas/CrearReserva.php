@@ -57,18 +57,12 @@ class CrearReserva extends Component
         $this->plataformas = DB::table('plat_reserva')->get();
     }
 
-    /**
-     * Carga habitaciones disponibles para el rango de fechas seleccionado.
-     * Si no hay fechas aún, muestra todas las que no están en mantenimiento.
-     */
     public function cargarHabitacionesDisponibles()
     {
         $query = DB::table('habitaciones')
             ->whereNotIn('estado', ['en_mantenimiento', 'mantenimiento'])
             ->orderBy('no_habitacion');
 
-        // Si hay fechas seleccionadas, excluir habitaciones con reserva
-        // activa que se solape con ese rango
         if ($this->fecha_check_in && $this->fecha_check_out) {
             $query->whereNotIn('idhabitacion', function ($sub) {
                 $sub->select('habitaciones_idhabitacion')
@@ -79,7 +73,6 @@ class CrearReserva extends Component
                     ->where('reservas.fecha_check_out', '>', $this->fecha_check_in);
             });
         } elseif ($this->fecha_check_in) {
-            // Solo check-in conocido: excluir reservas que cubran ese día
             $query->whereNotIn('idhabitacion', function ($sub) {
                 $sub->select('habitaciones_idhabitacion')
                     ->from('habitaciones_has_reservas')
@@ -92,15 +85,13 @@ class CrearReserva extends Component
 
         $this->habitaciones = $query->get();
 
-        // Si alguna habitación ya seleccionada ya no está disponible, quitarla
-        $idsDisponibles = $this->habitaciones->pluck('idhabitacion')->map(fn($v) => (int)$v)->toArray();
+        $idsDisponibles = collect($this->habitaciones)->pluck('idhabitacion')->map(fn($v) => (int)$v)->toArray();
         $this->habitaciones_ids = array_values(array_intersect(
             array_map('intval', $this->habitaciones_ids),
             $idsDisponibles
         ));
     }
 
-    // Recarga habitaciones cuando cambia check-in o check-out
     public function updatedFechaCheckIn()
     {
         $this->cargarHabitacionesDisponibles();
@@ -167,7 +158,8 @@ class CrearReserva extends Component
             'habitaciones_ids'    => 'required|array|min:1',
             'habitaciones_ids.*'  => 'exists:habitaciones,idhabitacion',
             'plataforma_id'       => 'required|exists:plat_reserva,idplat_reserva',
-            'metodo_pago'         => 'required|in:efectivo,tarjeta_debito,tarjeta_credito,transferencia,combinado',
+            // ← cortesia añadida a la lista de valores válidos
+            'metodo_pago'         => 'required|in:efectivo,tarjeta_debito,tarjeta_credito,transferencia,combinado,cortesia',
             'total_reserva'       => 'required|numeric|min:0',
         ], [
             'folio.required'               => 'El folio es obligatorio',
@@ -182,7 +174,7 @@ class CrearReserva extends Component
             'metodo_pago.required'         => 'Debe seleccionar un método de pago',
             'metodo_pago.in'               => 'Método de pago no válido',
             'total_reserva.required'       => 'Debe ingresar el total de la reserva',
-            'total_reserva.min'            => 'El total debe ser mayor a 0',
+            'total_reserva.min'            => 'El total debe ser mayor o igual a 0',
         ]);
 
         if ($this->metodo_pago === 'combinado') {
@@ -241,10 +233,6 @@ class CrearReserva extends Component
             ]);
 
             // ── Vincular habitaciones ──
-            // CORRECCIÓN: Solo marcar "ocupada" en la BD si el check-in
-            // es HOY o ya pasó. Si el check-in es futuro, la habitación
-            // permanece "disponible" en la BD — el croquis calculará su
-            // disponibilidad por fecha automáticamente.
             $hoy = now()->toDateString();
 
             foreach ($this->habitaciones_ids as $habitacion_id) {
@@ -254,12 +242,10 @@ class CrearReserva extends Component
                 ]);
 
                 if ($this->fecha_check_in <= $hoy) {
-                    // Check-in es hoy o pasado → marcar ocupada en BD
                     DB::table('habitaciones')
                         ->where('idhabitacion', $habitacion_id)
                         ->update(['estado' => 'ocupada']);
                 }
-                // Check-in futuro → no tocar el estado en BD
             }
 
             DB::commit();

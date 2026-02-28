@@ -11,7 +11,6 @@ use Carbon\Carbon;
         </div>
 
         @php
-            // Estadísticas generales
             $totalHabitaciones = DB::table('habitaciones')->count();
             $habitacionesOcupadas = DB::table('habitaciones')->where('estado', 'ocupada')->count();
             $reservasHoy = DB::table('reservas')->whereDate('fecha_reserva', now())->count();
@@ -20,7 +19,7 @@ use Carbon\Carbon;
                 ->whereDate('updated_at', now())
                 ->count();
 
-            // ALERTAS: Reservas próximas a check-out (HOY)
+            // Check-outs HOY
             $reservasCheckOutHoy = DB::table('reservas')
                 ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
                 ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
@@ -33,14 +32,10 @@ use Carbon\Carbon;
                 )
                 ->whereDate('reservas.fecha_check_out', now())
                 ->where('reservas.estado', 'confirmada')
-                ->groupBy(
-                    'reservas.idreservas',
-                    'reservas.fecha_check_out',
-                    'clientes.nom_completo',
-                )
+                ->groupBy('reservas.idreservas', 'reservas.fecha_check_out', 'clientes.nom_completo')
                 ->get();
 
-            // ALERTAS: Reservas próximas a check-out (MAÑANA)
+            // Check-outs MAÑANA
             $reservasCheckOutManana = DB::table('reservas')
                 ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
                 ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
@@ -53,22 +48,45 @@ use Carbon\Carbon;
                 )
                 ->whereDate('reservas.fecha_check_out', now()->addDay())
                 ->where('reservas.estado', 'confirmada')
-                ->groupBy(
+                ->groupBy('reservas.idreservas', 'reservas.fecha_check_out', 'clientes.nom_completo')
+                ->get();
+
+            // ══ NUEVO: Todas las reservas activas (confirmadas) con check-out futuro ══
+            // Ordenadas por fecha de check-out más próxima
+            $todasReservasActivas = DB::table('reservas')
+                ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
+                ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
+                ->join('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
+                ->select(
                     'reservas.idreservas',
+                    'reservas.folio',
+                    'reservas.fecha_check_in',
                     'reservas.fecha_check_out',
+                    'reservas.total_reserva',
+                    'reservas.metodo_pago',
                     'clientes.nom_completo',
+                    DB::raw('GROUP_CONCAT(habitaciones.no_habitacion ORDER BY habitaciones.no_habitacion SEPARATOR ", ") as habitaciones'),
+                    DB::raw('COUNT(DISTINCT habitaciones.idhabitacion) as total_habs'),
+                    DB::raw('DATEDIFF(reservas.fecha_check_out, NOW()) as dias_restantes')
                 )
+                ->where('reservas.estado', 'confirmada')
+                ->where('reservas.fecha_check_out', '>=', now()->toDateString())
+                ->groupBy(
+                    'reservas.idreservas', 'reservas.folio',
+                    'reservas.fecha_check_in', 'reservas.fecha_check_out',
+                    'reservas.total_reserva', 'reservas.metodo_pago',
+                    'clientes.nom_completo'
+                )
+                ->orderBy('reservas.fecha_check_out', 'asc')
                 ->get();
 
             // Datos para gráficos
-            // 1. Reservas por estado (últimos 30 días)
             $reservasPorEstado = DB::table('reservas')
                 ->select('estado', DB::raw('count(*) as total'))
                 ->where('fecha_reserva', '>=', now()->subDays(30))
                 ->groupBy('estado')
                 ->get();
 
-            // 2. Ocupación por tipo de habitación
             $ocupacionPorTipo = DB::table('habitaciones')
                 ->select(
                     'tipo',
@@ -79,6 +97,7 @@ use Carbon\Carbon;
                 ->get();
         @endphp
 
+        {{-- ── Tarjetas de resumen ── --}}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border-l-4 border-green-500 p-6 hover:shadow-xl transition-shadow">
                 <div class="flex items-center justify-between">
@@ -154,6 +173,7 @@ use Carbon\Carbon;
             </div>
         </div>
 
+        {{-- ── Check-out HOY y MAÑANA ── --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6 border-l-4 border-red-500">
                 <div class="flex items-center justify-between mb-4">
@@ -173,23 +193,16 @@ use Carbon\Carbon;
                         <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
                             <div class="flex justify-between items-start mb-2">
                                 <div>
-                                    <p class="font-semibold text-gray-900 dark:text-white">
-                                        {{ $reserva->nom_completo }}
-                                    </p>
+                                    <p class="font-semibold text-gray-900 dark:text-white">{{ $reserva->nom_completo }}</p>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">
                                         Habitación(es): <span class="font-medium">{{ $reserva->habitaciones }}</span>
                                     </p>
                                 </div>
                                 <span class="text-xs bg-red-600 text-white px-2 py-1 rounded">HOY</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-2 text-sm">
-                                <div>
-                                    <p class="text-gray-500 dark:text-gray-400">Check-out:</p>
-                                    <p class="font-medium text-gray-900 dark:text-white">
-                                        {{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
-                                    </p>
-                                </div>
-                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Check-out: <strong>{{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}</strong>
+                            </p>
                         </div>
                     @empty
                         <div class="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -220,23 +233,16 @@ use Carbon\Carbon;
                         <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
                             <div class="flex justify-between items-start mb-2">
                                 <div>
-                                    <p class="font-semibold text-gray-900 dark:text-white">
-                                        {{ $reserva->nom_completo }}
-                                    </p>
+                                    <p class="font-semibold text-gray-900 dark:text-white">{{ $reserva->nom_completo }}</p>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">
                                         Habitación(es): <span class="font-medium">{{ $reserva->habitaciones }}</span>
                                     </p>
                                 </div>
                                 <span class="text-xs bg-amber-600 text-white px-2 py-1 rounded">MAÑANA</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-2 text-sm">
-                                <div>
-                                    <p class="text-gray-500 dark:text-gray-400">Check-out:</p>
-                                    <p class="font-medium text-gray-900 dark:text-white">
-                                        {{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
-                                    </p>
-                                </div>
-                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Check-out: <strong>{{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}</strong>
+                            </p>
                         </div>
                     @empty
                         <div class="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -250,6 +256,183 @@ use Carbon\Carbon;
             </div>
         </div>
 
+        {{-- ══════════════════════════════════════════════════════════════════ --}}
+        {{-- NUEVA SECCIÓN: Todas las habitaciones activas con su check-out   --}}
+        {{-- ══════════════════════════════════════════════════════════════════ --}}
+        <div class="mb-8 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 overflow-hidden"
+             x-data="{ expandido: true }">
+
+            {{-- Header colapsable --}}
+            <button @click="expandido = !expandido"
+                    class="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-teal-700 to-teal-600 hover:from-teal-800 hover:to-teal-700 transition-all text-left">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Todas las Habitaciones Activas</h3>
+                        <p class="text-teal-200 text-sm">Check-outs próximos ordenados por fecha — haz check-out desde Gestión de Reservas</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-white/20 text-white rounded-full text-sm font-semibold">
+                        {{ $todasReservasActivas->count() }} activa{{ $todasReservasActivas->count() != 1 ? 's' : '' }}
+                    </span>
+                    <svg class="w-5 h-5 text-white transition-transform duration-200"
+                         :class="expandido ? 'rotate-180' : 'rotate-0'"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </button>
+
+            <div x-show="expandido" x-collapse>
+                @if($todasReservasActivas->count() > 0)
+                    {{-- Vista tabla para pantallas medianas+ --}}
+                    <div class="overflow-x-auto hidden md:block">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
+                            <thead class="bg-teal-50 dark:bg-teal-900/20">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Huésped</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Hab.</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Check-in</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Check-out</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Noches</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Días restantes</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Total</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Folio</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-100 dark:divide-zinc-800">
+                                @foreach($todasReservasActivas as $reserva)
+                                    @php
+                                        $noches = Carbon::parse($reserva->fecha_check_in)->diffInDays(Carbon::parse($reserva->fecha_check_out));
+                                        $diasRestantes = (int) $reserva->dias_restantes;
+                                        // Color según urgencia
+                                        if ($diasRestantes === 0) {
+                                            $rowClass = 'bg-red-50 dark:bg-red-900/10';
+                                            $badgeClass = 'bg-red-600 text-white';
+                                            $badgeText = 'HOY';
+                                        } elseif ($diasRestantes === 1) {
+                                            $rowClass = 'bg-amber-50 dark:bg-amber-900/10';
+                                            $badgeClass = 'bg-amber-500 text-white';
+                                            $badgeText = 'MAÑANA';
+                                        } elseif ($diasRestantes <= 3) {
+                                            $rowClass = 'bg-yellow-50 dark:bg-yellow-900/10';
+                                            $badgeClass = 'bg-yellow-500 text-white';
+                                            $badgeText = $diasRestantes . ' días';
+                                        } else {
+                                            $rowClass = '';
+                                            $badgeClass = 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300';
+                                            $badgeText = $diasRestantes . ' días';
+                                        }
+                                    @endphp
+                                    <tr class="hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-colors {{ $rowClass }}">
+                                        <td class="px-4 py-3">
+                                            <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ $reserva->nom_completo }}</p>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
+                                                {{ $reserva->habitaciones }}
+                                                @if($reserva->total_habs > 1)
+                                                    <span class="ml-1 text-teal-500">({{ $reserva->total_habs }})</span>
+                                                @endif
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                            {{ Carbon::parse($reserva->fecha_check_in)->format('d/m/Y') }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                            {{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                {{ $noches }} noche{{ $noches != 1 ? 's' : '' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $badgeClass }}">
+                                                {{ $badgeText }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-bold text-amber-600 dark:text-amber-400">
+                                            ${{ number_format($reserva->total_reserva, 2) }}
+                                        </td>
+                                        <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-mono">
+                                            {{ $reserva->folio }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Vista tarjetas para móvil --}}
+                    <div class="md:hidden divide-y divide-gray-100 dark:divide-zinc-800">
+                        @foreach($todasReservasActivas as $reserva)
+                            @php
+                                $noches = Carbon::parse($reserva->fecha_check_in)->diffInDays(Carbon::parse($reserva->fecha_check_out));
+                                $diasRestantes = (int) $reserva->dias_restantes;
+                                if ($diasRestantes === 0) {
+                                    $cardBorder = 'border-l-4 border-red-500';
+                                    $badgeClass = 'bg-red-600 text-white';
+                                    $badgeText = 'HOY';
+                                } elseif ($diasRestantes === 1) {
+                                    $cardBorder = 'border-l-4 border-amber-500';
+                                    $badgeClass = 'bg-amber-500 text-white';
+                                    $badgeText = 'MAÑANA';
+                                } elseif ($diasRestantes <= 3) {
+                                    $cardBorder = 'border-l-4 border-yellow-400';
+                                    $badgeClass = 'bg-yellow-500 text-white';
+                                    $badgeText = $diasRestantes . ' días';
+                                } else {
+                                    $cardBorder = 'border-l-4 border-teal-400';
+                                    $badgeClass = 'bg-teal-100 text-teal-800';
+                                    $badgeText = $diasRestantes . ' días';
+                                }
+                            @endphp
+                            <div class="p-4 {{ $cardBorder }}">
+                                <div class="flex justify-between items-start mb-2">
+                                    <p class="font-semibold text-gray-900 dark:text-white">{{ $reserva->nom_completo }}</p>
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $badgeClass }}">{{ $badgeText }}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                    <div>Hab: <span class="font-medium text-gray-900 dark:text-white">{{ $reserva->habitaciones }}</span></div>
+                                    <div>{{ $noches }} noche{{ $noches != 1 ? 's' : '' }}</div>
+                                    <div>Check-in: <span class="font-medium">{{ Carbon::parse($reserva->fecha_check_in)->format('d/m/Y') }}</span></div>
+                                    <div>Check-out: <span class="font-medium">{{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}</span></div>
+                                    <div class="col-span-2 flex justify-between items-center pt-1 border-t border-gray-100 dark:border-zinc-700 mt-1">
+                                        <span class="text-xs text-gray-400 font-mono">{{ $reserva->folio }}</span>
+                                        <span class="font-bold text-amber-600 dark:text-amber-400">${{ number_format($reserva->total_reserva, 2) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    {{-- Enlace a reservas --}}
+                    <div class="px-6 py-3 bg-gray-50 dark:bg-zinc-800/50 border-t border-gray-200 dark:border-zinc-700 flex justify-end">
+                        <a href="{{ route('reservas.index') }}"
+                           class="inline-flex items-center gap-2 text-sm font-medium text-teal-700 dark:text-teal-400 hover:text-teal-900 dark:hover:text-teal-200 transition-colors">
+                            Gestionar reservas
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                @else
+                    <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+                        <svg class="w-16 h-16 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-lg font-medium">No hay reservas activas en este momento</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- ── Gráficos ── --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Reservas por Estado (Últimos 30 días)</h3>
@@ -264,12 +447,10 @@ use Carbon\Carbon;
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
         <script>
-            // Configuración de colores según el tema
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#e5e7eb' : '#374151';
             const gridColor = isDark ? '#374151' : '#e5e7eb';
 
-            // 1. Gráfico de Reservas por Estado
             const reservasPorEstadoCtx = document.getElementById('reservasPorEstadoChart').getContext('2d');
             new Chart(reservasPorEstadoCtx, {
                 type: 'doughnut',
@@ -294,7 +475,6 @@ use Carbon\Carbon;
                 }
             });
 
-            // 2. Gráfico de Ocupación por Tipo
             const ocupacionPorTipoCtx = document.getElementById('ocupacionPorTipoChart').getContext('2d');
             new Chart(ocupacionPorTipoCtx, {
                 type: 'bar',
@@ -316,30 +496,15 @@ use Carbon\Carbon;
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: { color: textColor }
-                        }
-                    },
+                    plugins: { legend: { labels: { color: textColor } } },
                     scales: {
-                        y: {
-                            stacked: true,
-                            ticks: { color: textColor },
-                            grid: { color: gridColor }
-                        },
-                        x: {
-                            stacked: true,
-                            ticks: { color: textColor },
-                            grid: { color: gridColor }
-                        }
+                        y: { stacked: true, ticks: { color: textColor }, grid: { color: gridColor } },
+                        x: { stacked: true, ticks: { color: textColor }, grid: { color: gridColor } }
                     }
                 }
             });
 
-            // ========== AUTO-REFRESH CADA 30 SEGUNDOS ==========
-            setInterval(function() {
-                window.location.reload();
-            }, 30000); // 30000ms = 30 segundos
+            setInterval(function() { window.location.reload(); }, 30000);
         </script>
     </div>
 </x-layouts.app>

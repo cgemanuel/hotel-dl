@@ -18,9 +18,7 @@
         <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Croquis de Habitaciones</h2>
         <p class="text-gray-600 dark:text-gray-300 mb-4">Haz clic en una habitación para ver detalles</p>
 
-        {{-- ══════════════════════════════════════════════════════ --}}
-        {{-- SELECTOR DE FECHA (NUEVO)                             --}}
-        {{-- ══════════════════════════════════════════════════════ --}}
+        {{-- SELECTOR DE FECHA --}}
         <div class="flex flex-wrap items-center gap-3 mb-5 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
             <div class="flex items-center gap-2">
                 <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,8 +42,6 @@
             >
                 Ir a Hoy
             </button>
-
-
         </div>
 
         {{-- Botones de plantas --}}
@@ -131,12 +127,44 @@
                         wire:click="seleccionarHabitacion({{ $habitacion->idhabitacion }})"
                         class="w-full h-72 rounded-2xl overflow-hidden shadow-xl border-4 {{ $bgClase }} {{ $borderClase }} {{ $textClase }} transition-all duration-500 transform hover:scale-105 hover:shadow-2xl"
                     >
-                        <div class="h-full flex flex-col items-center justify-center p-6">
-                            <span class="text-5xl font-bold mb-4">{{ $habitacion->no_habitacion }}</span>
-                            <h3 class="text-2xl font-semibold capitalize mb-2">{{ $habitacion->tipo }}</h3>
-                            <span class="mt-4 px-4 py-2 rounded-full text-sm font-medium capitalize {{ $tagClase }}">
+                        <div class="h-full flex flex-col items-center justify-center p-5">
+                            <span class="text-5xl font-bold mb-3">{{ $habitacion->no_habitacion }}</span>
+                            <h3 class="text-xl font-semibold capitalize mb-2">{{ $habitacion->tipo }}</h3>
+                            <span class="px-3 py-1.5 rounded-full text-sm font-medium capitalize {{ $tagClase }}">
                                 {{ str_replace('_', ' ', $habitacion->estado) }}
                             </span>
+
+                            {{-- Mostrar check-out y noches si la habitación está ocupada --}}
+                            @if($estadoNormalizado === 'ocupada' && $habitacion->reserva_id)
+                                @php
+                                    $resInfo = \Illuminate\Support\Facades\DB::table('reservas')
+                                        ->where('idreservas', $habitacion->reserva_id)
+                                        ->select('fecha_check_out', 'fecha_check_in')
+                                        ->first();
+                                @endphp
+                                @if($resInfo)
+                                    @php
+                                        $noches = \Carbon\Carbon::parse($resInfo->fecha_check_in)
+                                            ->diffInDays(\Carbon\Carbon::parse($resInfo->fecha_check_out));
+                                    @endphp
+                                    <div class="mt-3 w-full space-y-1">
+                                        <div class="flex items-center justify-center gap-1.5 text-xs font-medium opacity-90">
+                                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                            <span>Sal: {{ \Carbon\Carbon::parse($resInfo->fecha_check_out)->format('d/m/Y') }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-center gap-1.5 text-xs font-medium opacity-80">
+                                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                                            </svg>
+                                            <span>{{ $noches }} noche{{ $noches != 1 ? 's' : '' }}</span>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endif
                         </div>
                     </button>
                 @endforeach
@@ -283,6 +311,8 @@
 
                                     <div x-show="openDatos" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                                            {{-- Folio --}}
                                             @if(isset($habitacionSeleccionada['folio']))
                                                 <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
                                                     <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Folio</p>
@@ -290,11 +320,13 @@
                                                 </div>
                                             @endif
 
+                                            {{-- Cliente --}}
                                             <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
                                                 <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Cliente</p>
                                                 <p class="font-semibold text-gray-900 dark:text-white">{{ $habitacionSeleccionada['nom_completo'] }}</p>
                                             </div>
 
+                                            {{-- Check-in --}}
                                             <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
                                                 <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Check-in</p>
                                                 <p class="font-medium text-gray-900 dark:text-white">
@@ -302,12 +334,21 @@
                                                 </p>
                                             </div>
 
+                                            {{-- ✅ Check-out con noches --}}
                                             <div class="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
                                                 <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Check-out</p>
                                                 <p class="font-medium text-gray-900 dark:text-white">
                                                     {{ \Carbon\Carbon::parse($habitacionSeleccionada['fecha_check_out'])->format('d/m/Y') }}
                                                 </p>
+                                                @php
+                                                    $nochesModal = \Carbon\Carbon::parse($habitacionSeleccionada['fecha_check_in'])
+                                                        ->diffInDays(\Carbon\Carbon::parse($habitacionSeleccionada['fecha_check_out']));
+                                                @endphp
+                                                <p class="text-xs text-blue-600 dark:text-blue-400 mt-1 font-semibold">
+                                                    {{ $nochesModal }} noche{{ $nochesModal != 1 ? 's' : '' }}
+                                                </p>
                                             </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -464,13 +505,18 @@
                                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check-in</th>
                                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check-out</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Noches</th>
                                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                                             </tr>
                                         </thead>
                                         <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                                             @foreach($historialReservas as $reserva)
+                                            @php
+                                                $nochesHist = \Carbon\Carbon::parse($reserva->fecha_check_in)
+                                                    ->diffInDays(\Carbon\Carbon::parse($reserva->fecha_check_out));
+                                            @endphp
                                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                                <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $reserva->folio ?? 'N/A' }}</td>
+                                                <td class="px-3 py-2 text-sm text-gray-900 dark:text-white font-mono">{{ $reserva->folio ?? 'N/A' }}</td>
                                                 <td class="px-3 py-2 text-sm">
                                                     <div class="text-gray-900 dark:text-white font-medium">{{ $reserva->nom_completo }}</div>
                                                 </td>
@@ -480,12 +526,16 @@
                                                 <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">
                                                     {{ \Carbon\Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
                                                 </td>
+                                                {{-- ✅ Columna noches en historial --}}
+                                                <td class="px-3 py-2 text-sm text-center text-gray-600 dark:text-gray-400 font-medium">
+                                                    {{ $nochesHist }}n
+                                                </td>
                                                 <td class="px-3 py-2">
                                                     <span class="px-2 py-1 text-xs font-medium rounded-full
-                                                        {{ $reserva->estado === 'confirmada' ? 'bg-green-100 text-green-800' : '' }}
-                                                        {{ $reserva->estado === 'completada' ? 'bg-blue-100 text-blue-800' : '' }}
-                                                        {{ $reserva->estado === 'cancelada' ? 'bg-red-100 text-red-800' : '' }}
-                                                        {{ $reserva->estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' : '' }}">
+                                                        {{ $reserva->estado === 'confirmada' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : '' }}
+                                                        {{ $reserva->estado === 'completada' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' : '' }}
+                                                        {{ $reserva->estado === 'cancelada'  ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' : '' }}
+                                                        {{ $reserva->estado === 'pendiente'  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300' : '' }}">
                                                         {{ ucfirst($reserva->estado) }}
                                                     </span>
                                                 </td>
