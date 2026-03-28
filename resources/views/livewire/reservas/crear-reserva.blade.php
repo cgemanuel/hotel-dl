@@ -281,12 +281,12 @@
                                     <select wire:model.live="metodo_pago"
                                             class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
                                         <option value="">Seleccionar...</option>
-                                        <option value="efectivo">💵 Efectivo</option>
-                                        <option value="tarjeta_debito">💳 Tarjeta de Débito</option>
-                                        <option value="tarjeta_credito">💳 Tarjeta de Crédito</option>
-                                        <option value="transferencia">🏦 Transferencia</option>
-                                        <option value="combinado">🔀 Combinado</option>
-                                        <option value="cortesia">🎁 Cortesía</option>
+                                        <option value="efectivo">Efectivo</option>
+                                        <option value="tarjeta_debito">Tarjeta de Débito</option>
+                                        <option value="tarjeta_credito">Tarjeta de Crédito</option>
+                                        <option value="transferencia">Transferencia</option>
+                                        <option value="combinado">Combinado</option>
+                                        <option value="cortesia">Cortesía</option>
                                     </select>
                                     @error('metodo_pago') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
 

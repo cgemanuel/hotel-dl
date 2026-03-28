@@ -14,12 +14,14 @@ use Carbon\Carbon;
             $totalHabitaciones = DB::table('habitaciones')->count();
             $habitacionesOcupadas = DB::table('habitaciones')->where('estado', 'ocupada')->count();
             $reservasHoy = DB::table('reservas')->whereDate('fecha_reserva', now())->count();
+
+            // Liberadas hoy = reservas que pasaron a estado 'completada' o 'cancelada' hoy
             $reservasLiberadasHoy = DB::table('reservas')
                 ->whereIn('estado', ['completada', 'cancelada'])
                 ->whereDate('updated_at', now())
                 ->count();
 
-            // Check-outs HOY
+            // Check-outs HOY (confirmadas con check-out hoy)
             $reservasCheckOutHoy = DB::table('reservas')
                 ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
                 ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
@@ -51,8 +53,7 @@ use Carbon\Carbon;
                 ->groupBy('reservas.idreservas', 'reservas.fecha_check_out', 'clientes.nom_completo')
                 ->get();
 
-            // ══ NUEVO: Todas las reservas activas (confirmadas) con check-out futuro ══
-            // Ordenadas por fecha de check-out más próxima
+            // Todas las reservas ACTIVAS (confirmadas con check-out >= hoy)
             $todasReservasActivas = DB::table('reservas')
                 ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
                 ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
@@ -80,6 +81,32 @@ use Carbon\Carbon;
                 ->orderBy('reservas.fecha_check_out', 'asc')
                 ->get();
 
+            // ══ NUEVO: Reservas LIBERADAS HOY (completadas o canceladas hoy) ══
+            $reservasLiberadasHoyDetalle = DB::table('reservas')
+                ->join('clientes', 'reservas.clientes_idclientes', '=', 'clientes.idclientes')
+                ->join('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
+                ->join('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
+                ->select(
+                    'reservas.idreservas',
+                    'reservas.folio',
+                    'reservas.fecha_check_in',
+                    'reservas.fecha_check_out',
+                    'reservas.total_reserva',
+                    'reservas.estado',
+                    'clientes.nom_completo',
+                    DB::raw('GROUP_CONCAT(habitaciones.no_habitacion ORDER BY habitaciones.no_habitacion SEPARATOR ", ") as habitaciones')
+                )
+                ->whereIn('reservas.estado', ['completada', 'cancelada'])
+                ->whereDate('reservas.updated_at', now())
+                ->groupBy(
+                    'reservas.idreservas', 'reservas.folio',
+                    'reservas.fecha_check_in', 'reservas.fecha_check_out',
+                    'reservas.total_reserva', 'reservas.estado',
+                    'clientes.nom_completo'
+                )
+                ->orderBy('reservas.updated_at', 'desc')
+                ->get();
+
             // Datos para gráficos
             $reservasPorEstado = DB::table('reservas')
                 ->select('estado', DB::raw('count(*) as total'))
@@ -96,6 +123,24 @@ use Carbon\Carbon;
                 ->groupBy('tipo')
                 ->get();
         @endphp
+
+        {{-- ── Mensaje flash desde acciones de liberar ── --}}
+        @if(session('dashboard_message'))
+            <div class="mb-6 p-4 bg-green-100 dark:bg-green-900/20 border-l-4 border-green-600 text-green-800 dark:text-green-200 rounded-lg flex items-center gap-2">
+                <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                {{ session('dashboard_message') }}
+            </div>
+        @endif
+        @if(session('dashboard_error'))
+            <div class="mb-6 p-4 bg-red-100 dark:bg-red-900/20 border-l-4 border-red-600 text-red-800 dark:text-red-200 rounded-lg flex items-center gap-2">
+                <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                {{ session('dashboard_error') }}
+            </div>
+        @endif
 
         {{-- ── Tarjetas de resumen ── --}}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -256,9 +301,9 @@ use Carbon\Carbon;
             </div>
         </div>
 
-        {{-- ══════════════════════════════════════════════════════════════════ --}}
-        {{-- NUEVA SECCIÓN: Todas las habitaciones activas con su check-out   --}}
-        {{-- ══════════════════════════════════════════════════════════════════ --}}
+        {{-- ══════════════════════════════════════════════════════════════════════════ --}}
+        {{-- TABLA: Todas las habitaciones activas — con botón Liberar integrado      --}}
+        {{-- ══════════════════════════════════════════════════════════════════════════ --}}
         <div class="mb-8 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 overflow-hidden"
              x-data="{ expandido: true }">
 
@@ -271,7 +316,7 @@ use Carbon\Carbon;
                     </svg>
                     <div>
                         <h3 class="text-lg font-bold text-white">Todas las Habitaciones Activas</h3>
-                        <p class="text-teal-200 text-sm">Check-outs próximos ordenados por fecha — haz check-out desde Gestión de Reservas</p>
+                        <p class="text-teal-200 text-sm">Check-outs próximos — puedes liberar directamente desde aquí</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -298,9 +343,10 @@ use Carbon\Carbon;
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Check-in</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Check-out</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Noches</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Días restantes</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Días Restantes</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Total</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Folio</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider">Acción</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-100 dark:divide-zinc-800">
@@ -308,23 +354,22 @@ use Carbon\Carbon;
                                     @php
                                         $noches = Carbon::parse($reserva->fecha_check_in)->diffInDays(Carbon::parse($reserva->fecha_check_out));
                                         $diasRestantes = (int) $reserva->dias_restantes;
-                                        // Color según urgencia
                                         if ($diasRestantes === 0) {
-                                            $rowClass = 'bg-red-50 dark:bg-red-900/10';
+                                            $rowClass   = 'bg-red-50 dark:bg-red-900/10';
                                             $badgeClass = 'bg-red-600 text-white';
-                                            $badgeText = 'HOY';
+                                            $badgeText  = 'HOY';
                                         } elseif ($diasRestantes === 1) {
-                                            $rowClass = 'bg-amber-50 dark:bg-amber-900/10';
+                                            $rowClass   = 'bg-amber-50 dark:bg-amber-900/10';
                                             $badgeClass = 'bg-amber-500 text-white';
-                                            $badgeText = 'MAÑANA';
+                                            $badgeText  = 'MAÑANA';
                                         } elseif ($diasRestantes <= 3) {
-                                            $rowClass = 'bg-yellow-50 dark:bg-yellow-900/10';
+                                            $rowClass   = 'bg-yellow-50 dark:bg-yellow-900/10';
                                             $badgeClass = 'bg-yellow-500 text-white';
-                                            $badgeText = $diasRestantes . ' días';
+                                            $badgeText  = $diasRestantes . ' días';
                                         } else {
-                                            $rowClass = '';
+                                            $rowClass   = '';
                                             $badgeClass = 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300';
-                                            $badgeText = $diasRestantes . ' días';
+                                            $badgeText  = $diasRestantes . ' días';
                                         }
                                     @endphp
                                     <tr class="hover:bg-teal-50/50 dark:hover:bg-teal-900/10 transition-colors {{ $rowClass }}">
@@ -361,6 +406,23 @@ use Carbon\Carbon;
                                         <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-mono">
                                             {{ $reserva->folio }}
                                         </td>
+                                        {{-- ── BOTÓN LIBERAR ── --}}
+                                        <td class="px-4 py-3 text-center">
+                                            <form method="POST" action="{{ route('dashboard.liberar', $reserva->idreservas) }}"
+                                                  onsubmit="return confirm('¿Desea liberar la reserva de {{ addslashes($reserva->nom_completo) }}? Las habitaciones quedarán disponibles.')">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors
+                                                            {{ $diasRestantes === 0
+                                                                ? 'bg-red-600 hover:bg-red-700 text-white'
+                                                                : 'bg-teal-600 hover:bg-teal-700 text-white' }}">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                    Liberar
+                                                </button>
+                                            </form>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -376,19 +438,19 @@ use Carbon\Carbon;
                                 if ($diasRestantes === 0) {
                                     $cardBorder = 'border-l-4 border-red-500';
                                     $badgeClass = 'bg-red-600 text-white';
-                                    $badgeText = 'HOY';
+                                    $badgeText  = 'HOY';
                                 } elseif ($diasRestantes === 1) {
                                     $cardBorder = 'border-l-4 border-amber-500';
                                     $badgeClass = 'bg-amber-500 text-white';
-                                    $badgeText = 'MAÑANA';
+                                    $badgeText  = 'MAÑANA';
                                 } elseif ($diasRestantes <= 3) {
                                     $cardBorder = 'border-l-4 border-yellow-400';
                                     $badgeClass = 'bg-yellow-500 text-white';
-                                    $badgeText = $diasRestantes . ' días';
+                                    $badgeText  = $diasRestantes . ' días';
                                 } else {
                                     $cardBorder = 'border-l-4 border-teal-400';
                                     $badgeClass = 'bg-teal-100 text-teal-800';
-                                    $badgeText = $diasRestantes . ' días';
+                                    $badgeText  = $diasRestantes . ' días';
                                 }
                             @endphp
                             <div class="p-4 {{ $cardBorder }}">
@@ -401,24 +463,26 @@ use Carbon\Carbon;
                                     <div>{{ $noches }} noche{{ $noches != 1 ? 's' : '' }}</div>
                                     <div>Check-in: <span class="font-medium">{{ Carbon::parse($reserva->fecha_check_in)->format('d/m/Y') }}</span></div>
                                     <div>Check-out: <span class="font-medium">{{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}</span></div>
-                                    <div class="col-span-2 flex justify-between items-center pt-1 border-t border-gray-100 dark:border-zinc-700 mt-1">
+                                    <div class="col-span-2 flex justify-between items-center pt-2 border-t border-gray-100 dark:border-zinc-700 mt-1">
                                         <span class="text-xs text-gray-400 font-mono">{{ $reserva->folio }}</span>
                                         <span class="font-bold text-amber-600 dark:text-amber-400">${{ number_format($reserva->total_reserva, 2) }}</span>
+                                    </div>
+                                    <div class="col-span-2 mt-2">
+                                        <form method="POST" action="{{ route('dashboard.liberar', $reserva->idreservas) }}"
+                                              onsubmit="return confirm('¿Liberar reserva de {{ addslashes($reserva->nom_completo) }}?')">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="w-full flex items-center justify-center gap-1 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                                Liberar habitación
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
-                    </div>
-
-                    {{-- Enlace a reservas --}}
-                    <div class="px-6 py-3 bg-gray-50 dark:bg-zinc-800/50 border-t border-gray-200 dark:border-zinc-700 flex justify-end">
-                        <a href="{{ route('reservas.index') }}"
-                           class="inline-flex items-center gap-2 text-sm font-medium text-teal-700 dark:text-teal-400 hover:text-teal-900 dark:hover:text-teal-200 transition-colors">
-                            Gestionar reservas
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
-                        </a>
                     </div>
 
                 @else
@@ -431,6 +495,93 @@ use Carbon\Carbon;
                 @endif
             </div>
         </div>
+
+        {{-- ══════════════════════════════════════════════════════════════════════════ --}}
+        {{-- NUEVA SECCIÓN: Habitaciones Liberadas Hoy                               --}}
+        {{-- ══════════════════════════════════════════════════════════════════════════ --}}
+        @if($reservasLiberadasHoyDetalle->count() > 0)
+        <div class="mb-8 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 overflow-hidden"
+             x-data="{ expandido: true }">
+
+            <button @click="expandido = !expandido"
+                    class="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-800 hover:to-emerald-700 transition-all text-left">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Habitaciones Liberadas Hoy</h3>
+                        <p class="text-emerald-200 text-sm">Reservas completadas o canceladas el día de hoy</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-white/20 text-white rounded-full text-sm font-semibold">
+                        {{ $reservasLiberadasHoyDetalle->count() }} liberada{{ $reservasLiberadasHoyDetalle->count() != 1 ? 's' : '' }}
+                    </span>
+                    <svg class="w-5 h-5 text-white transition-transform duration-200"
+                         :class="expandido ? 'rotate-180' : 'rotate-0'"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </button>
+
+            <div x-show="expandido" x-collapse>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
+                        <thead class="bg-emerald-50 dark:bg-emerald-900/20">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Huésped</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Hab.</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Check-in</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Check-out</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Total</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Estado</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Folio</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-zinc-900 divide-y divide-gray-100 dark:divide-zinc-800">
+                            @foreach($reservasLiberadasHoyDetalle as $reserva)
+                                <tr class="hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors">
+                                    <td class="px-4 py-3">
+                                        <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ $reserva->nom_completo }}</p>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                            {{ $reserva->habitaciones }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                        {{ Carbon::parse($reserva->fecha_check_in)->format('d/m/Y') }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                        {{ Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm font-bold text-amber-600 dark:text-amber-400">
+                                        ${{ number_format($reserva->total_reserva, 2) }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($reserva->estado === 'completada')
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                                ✓ Completada
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                                                ✕ Cancelada
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-mono">
+                                        {{ $reserva->folio }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{-- ── Gráficos ── --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

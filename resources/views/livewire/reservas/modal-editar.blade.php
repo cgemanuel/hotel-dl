@@ -292,7 +292,7 @@
                                     <option value="tarjeta_credito">Tarjeta de Crédito</option>
                                     <option value="transferencia">Transferencia</option>
                                     <option value="combinado">Combinado</option>
-                                    <option value="cortesia">🎁 Cortesía</option>
+                                    <option value="cortesia"> Cortesía</option>
                                     @if($edit_metodo_pago === 'tarjeta')
                                         <option value="tarjeta">Tarjeta (valor antiguo)</option>
                                     @endif

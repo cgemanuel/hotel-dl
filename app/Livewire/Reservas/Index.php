@@ -31,7 +31,7 @@ class Index extends Component
     public $mostrar_form_vehiculo = false;
 
     public $editando_id = null;
-    public $edit_folio = '';          // ← NUEVO: folio editable
+    public $edit_folio = '';
     public $edit_fecha_reserva = '';
     public $edit_fecha_check_in = '';
     public $edit_fecha_check_out = '';
@@ -42,19 +42,16 @@ class Index extends Component
     public $edit_tipo_vehiculo = '';
     public $edit_descripcion_vehiculo = '';
 
-    // Datos del cliente (editables)
     public $edit_nom_completo        = '';
     public $edit_tipo_identificacion = '';
     public $edit_direccion           = '';
     public $edit_pais_origen         = '';
 
-    // Plataforma
     public $edit_plataforma_id = '';
     public $plataformas        = [];
 
     public $edit_metodo_pago = '';
 
-    // ── Habitaciones multi-selección ──
     public $edit_habitaciones_ids = [];
     public $edit_habitaciones_disponibles = [];
 
@@ -223,6 +220,7 @@ class Index extends Component
                     'plat_reserva.nombre_plataforma',
                     'plat_reserva.comision',
                     'estacionamiento.no_espacio'
+                    // reservas.* ya incluye metodo_pago
                 )
                 ->first();
 
@@ -260,6 +258,7 @@ class Index extends Component
                 'clientes.direccion',
                 'clientes.pais_origen',
                 'plat_reserva.nombre_plataforma'
+                // reservas.* incluye metodo_pago
             )
             ->first();
 
@@ -269,7 +268,7 @@ class Index extends Component
         }
 
         $this->editando_id                      = $reserva->idreservas;
-        $this->edit_folio                       = $reserva->folio;           // ← NUEVO
+        $this->edit_folio                       = $reserva->folio;
         $this->edit_fecha_reserva               = $reserva->fecha_reserva;
         $this->edit_fecha_check_in              = $reserva->fecha_check_in;
         $this->edit_fecha_check_out             = $reserva->fecha_check_out;
@@ -286,10 +285,8 @@ class Index extends Component
         $this->edit_tipo_vehiculo               = $reserva->tipo_vehiculo;
         $this->edit_descripcion_vehiculo        = $reserva->descripcion_vehiculo;
 
-        // Cargar plataformas para el selector
         $this->plataformas = DB::table('plat_reserva')->get();
 
-        // ── HABITACIONES ──
         $this->edit_habitaciones_ids = DB::table('habitaciones_has_reservas')
             ->where('reservas_idreservas', $id)
             ->pluck('habitaciones_idhabitacion')
@@ -308,7 +305,6 @@ class Index extends Component
             ->orderBy('no_habitacion')
             ->get();
 
-        // ── Espacios de estacionamiento ──
         $todosEspacios = DB::table('estacionamiento')->get();
         $this->espacios_disponibles = $todosEspacios->filter(function ($espacio) use ($reserva) {
             return $espacio->estado === 'disponible' ||
@@ -364,7 +360,6 @@ class Index extends Component
                 ->where('idclientes', $reservaActual->clientes_idclientes)
                 ->first();
 
-            // ── Auditoría ──
             AuditService::logUpdated(
                 'Reserva',
                 $this->editando_id,
@@ -398,7 +393,6 @@ class Index extends Component
                 ]
             );
 
-            // ── Estacionamiento ──
             $estacionamientoAnterior = $reservaActual->estacionamiento_no_espacio;
             $estacionamientoNuevo    = $this->edit_estacionamiento_no_espacio ?: null;
 
@@ -415,11 +409,10 @@ class Index extends Component
                 }
             }
 
-            // ── Actualizar reserva ──
             DB::table('reservas')
                 ->where('idreservas', $this->editando_id)
                 ->update([
-                    'folio'                       => $this->edit_folio,           // ← NUEVO
+                    'folio'                       => $this->edit_folio,
                     'fecha_reserva'               => $this->edit_fecha_reserva,
                     'fecha_check_in'              => $this->edit_fecha_check_in,
                     'fecha_check_out'             => $this->edit_fecha_check_out,
@@ -434,7 +427,6 @@ class Index extends Component
                     'updated_at'                  => now(),
                 ]);
 
-            // ── Actualizar cliente ──
             if ($clienteActual) {
                 DB::table('clientes')
                     ->where('idclientes', $reservaActual->clientes_idclientes)
@@ -446,7 +438,6 @@ class Index extends Component
                     ]);
             }
 
-            // ── HABITACIONES: recalcular ──
             $habitacionesAnteriores = DB::table('habitaciones_has_reservas')
                 ->where('reservas_idreservas', $this->editando_id)
                 ->pluck('habitaciones_idhabitacion')
@@ -624,7 +615,7 @@ class Index extends Component
     }
 
     // ══════════════════════════════════════════════════════════
-    // RENDER
+    // RENDER  ← CORRECCIÓN PRINCIPAL AQUÍ
     // ══════════════════════════════════════════════════════════
 
     public function render()
@@ -642,6 +633,7 @@ class Index extends Component
                 'reservas.fecha_check_out',
                 'reservas.no_personas',
                 'reservas.estado',
+                'reservas.metodo_pago',                  // ← CAMPO AÑADIDO
                 'reservas.estacionamiento_no_espacio',
                 'reservas.total_reserva',
                 'reservas.tipo_vehiculo',
@@ -649,17 +641,26 @@ class Index extends Component
                 'clientes.nom_completo',
                 'plat_reserva.nombre_plataforma',
                 'plat_reserva.comision',
-                // ← CORRECCIÓN: GROUP_CONCAT para mostrar TODAS las habitaciones
                 DB::raw('GROUP_CONCAT(DISTINCT habitaciones.no_habitacion ORDER BY habitaciones.no_habitacion SEPARATOR ", ") as no_habitacion'),
                 DB::raw('GROUP_CONCAT(DISTINCT habitaciones.tipo ORDER BY habitaciones.no_habitacion SEPARATOR ", ") as tipo_habitacion'),
                 DB::raw('COUNT(DISTINCT habitaciones.idhabitacion) as total_habitaciones')
             )
             ->groupBy(
-                'reservas.idreservas', 'reservas.folio', 'reservas.fecha_reserva',
-                'reservas.fecha_check_in', 'reservas.fecha_check_out', 'reservas.no_personas',
-                'reservas.estado', 'reservas.estacionamiento_no_espacio', 'reservas.total_reserva',
-                'reservas.tipo_vehiculo', 'reservas.descripcion_vehiculo',
-                'clientes.nom_completo', 'plat_reserva.nombre_plataforma', 'plat_reserva.comision'
+                'reservas.idreservas',
+                'reservas.folio',
+                'reservas.fecha_reserva',
+                'reservas.fecha_check_in',
+                'reservas.fecha_check_out',
+                'reservas.no_personas',
+                'reservas.estado',
+                'reservas.metodo_pago',                  // ← CAMPO AÑADIDO
+                'reservas.estacionamiento_no_espacio',
+                'reservas.total_reserva',
+                'reservas.tipo_vehiculo',
+                'reservas.descripcion_vehiculo',
+                'clientes.nom_completo',
+                'plat_reserva.nombre_plataforma',
+                'plat_reserva.comision'
             );
 
         if ($this->search) {

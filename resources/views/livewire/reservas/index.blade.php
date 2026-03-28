@@ -36,27 +36,19 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
                 <label class="block text-sm font-medium text-green-800 dark:text-green-200 mb-1">Buscar</label>
-                <flux:input
-                    wire:model.live.debounce.300ms="search"
-                    placeholder="Folio, nombre o ID..."
-                    icon="magnifying-glass"
-                    class="w-full"
-                />
+                <flux:input wire:model.live.debounce.300ms="search" placeholder="Folio, nombre o ID..." icon="magnifying-glass" class="w-full"/>
             </div>
             <div>
                 <label class="block text-sm font-medium text-green-800 dark:text-green-200 mb-1">Fecha Inicio</label>
-                <input type="date" wire:model.live="fecha_inicio"
-                       class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
+                <input type="date" wire:model.live="fecha_inicio" class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-green-800 dark:text-green-200 mb-1">Fecha Fin</label>
-                <input type="date" wire:model.live="fecha_fin"
-                       class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
+                <input type="date" wire:model.live="fecha_fin" class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-green-800 dark:text-green-200 mb-1">Estado</label>
-                <select wire:model.live="estado_filtro"
-                        class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
+                <select wire:model.live="estado_filtro" class="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
                     <option value="">Todos</option>
                     <option value="confirmada">Confirmada</option>
                     <option value="pendiente">Pendiente</option>
@@ -65,38 +57,28 @@
                 </select>
             </div>
             <div class="flex items-end gap-2">
-                <button wire:click="limpiarFiltros"
-                        class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors text-sm">
-                    Limpiar
-                </button>
+                <button wire:click="limpiarFiltros" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors text-sm">Limpiar</button>
             </div>
         </div>
     </div>
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div class="text-sm text-gray-600 dark:text-gray-400">
-            Mostrando resultados filtrados
-        </div>
-        <flux:button variant="primary" icon="plus" wire:click="$dispatch('abrirModal')" class="bg-amber-600 hover:bg-amber-700">
-            Nueva Reserva
-        </flux:button>
+        <div class="text-sm text-gray-600 dark:text-gray-400">Mostrando resultados filtrados</div>
+        <flux:button variant="primary" icon="plus" wire:click="$dispatch('abrirModal')" class="bg-amber-600 hover:bg-amber-700">Nueva Reserva</flux:button>
     </div>
 
     @livewire('reservas.crear-reserva')
 
-    @include('livewire.reservas.modal-ver', [
-        'mostrarModalVer'      => $mostrarModalVer,
-        'reservaSeleccionada'  => $reservaSeleccionada,
-    ])
+    @include('livewire.reservas.modal-ver', ['mostrarModalVer' => $mostrarModalVer, 'reservaSeleccionada' => $reservaSeleccionada])
 
     @include('livewire.reservas.modal-editar', [
-        'mostrarModalEditar'              => $mostrarModalEditar,
-        'edit_metodo_pago'                => $edit_metodo_pago,
-        'edit_habitaciones_ids'           => $edit_habitaciones_ids,
-        'edit_habitaciones_disponibles'   => $edit_habitaciones_disponibles,
-        'espacios_disponibles'            => $espacios_disponibles,
-        'editando_id'                     => $editando_id,
-        'plataformas'                     => $plataformas,
+        'mostrarModalEditar'            => $mostrarModalEditar,
+        'edit_metodo_pago'              => $edit_metodo_pago,
+        'edit_habitaciones_ids'         => $edit_habitaciones_ids,
+        'edit_habitaciones_disponibles' => $edit_habitaciones_disponibles,
+        'espacios_disponibles'          => $espacios_disponibles,
+        'editando_id'                   => $editando_id,
+        'plataformas'                   => $plataformas,
     ])
 
     <div class="overflow-x-auto bg-white dark:bg-zinc-900 rounded-lg border-2 border-green-200 dark:border-green-800 shadow-lg">
@@ -111,34 +93,29 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Personas</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Estacionamiento</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Estado</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Método Pago</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Total</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
                 </tr>
             </thead>
-
             <tbody class="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-700">
                 @forelse($reservas as $reserva)
                 <tr class="hover:bg-green-50 dark:hover:bg-green-900/10 transition-colors">
+
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm font-bold text-amber-700 dark:text-amber-400">
-                            {{ $reserva->folio ?? 'N/A' }}
-                        </span>
+                        <span class="text-sm font-bold text-amber-700 dark:text-amber-400">{{ $reserva->folio ?? 'N/A' }}</span>
                     </td>
+
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $reserva->nom_completo }}</span>
                     </td>
+
                     <td class="px-6 py-4">
-                        {{-- ← CORRECCIÓN: Muestra TODAS las habitaciones con GROUP_CONCAT --}}
-                        @php
-                            $habs = explode(', ', $reserva->no_habitacion ?? '');
-                            $tipos = explode(', ', $reserva->tipo_habitacion ?? '');
-                        @endphp
+                        @php $habs = explode(', ', $reserva->no_habitacion ?? ''); @endphp
                         <div class="flex flex-wrap gap-1">
-                            @foreach($habs as $idx => $hab)
+                            @foreach($habs as $hab)
                                 @if(trim($hab))
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                    Hab. {{ trim($hab) }}
-                                </span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Hab. {{ trim($hab) }}</span>
                                 @endif
                             @endforeach
                         </div>
@@ -146,30 +123,19 @@
                             <p class="text-xs text-gray-400 mt-1">{{ $reserva->total_habitaciones }} habitaciones</p>
                         @endif
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">
-                        {{ \Carbon\Carbon::parse($reserva->fecha_check_in)->format('d/m/Y') }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">
-                        {{ \Carbon\Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100 text-center">
-                        {{ $reserva->no_personas }}
-                    </td>
+
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">{{ \Carbon\Carbon::parse($reserva->fecha_check_in)->format('d/m/Y') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">{{ \Carbon\Carbon::parse($reserva->fecha_check_out)->format('d/m/Y') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100 text-center">{{ $reserva->no_personas }}</td>
+
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <button
-                            wire:click="asignarEstacionamiento({{ $reserva->idreservas }})"
-                            wire:loading.attr="disabled"
-                            class="px-3 py-1 text-xs font-medium rounded-lg transition-colors disabled:opacity-50
-                                {{ $reserva->estacionamiento_no_espacio
-                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800'
-                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                }}">
-                            <span wire:loading.remove wire:target="asignarEstacionamiento({{ $reserva->idreservas }})">
-                                {{ $reserva->estacionamiento_no_espacio ? 'Espacio ' . $reserva->estacionamiento_no_espacio : 'Asignar' }}
-                            </span>
+                        <button wire:click="asignarEstacionamiento({{ $reserva->idreservas }})" wire:loading.attr="disabled"
+                            class="px-3 py-1 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 {{ $reserva->estacionamiento_no_espacio ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-200' }}">
+                            <span wire:loading.remove wire:target="asignarEstacionamiento({{ $reserva->idreservas }})">{{ $reserva->estacionamiento_no_espacio ? 'Espacio '.$reserva->estacionamiento_no_espacio : 'Asignar' }}</span>
                             <span wire:loading wire:target="asignarEstacionamiento({{ $reserva->idreservas }})">Cargando...</span>
                         </button>
                     </td>
+
                     <td class="px-6 py-4 whitespace-nowrap">
                         @php
                             $estadoClasses = match($reserva->estado) {
@@ -177,67 +143,53 @@
                                 'pendiente'  => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
                                 'cancelada'  => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
                                 'completada' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-                                default      => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                default      => 'bg-gray-100 text-gray-800',
                             };
                         @endphp
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $estadoClasses }}">
-                            {{ ucfirst($reserva->estado) }}
-                        </span>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $estadoClasses }}">{{ ucfirst($reserva->estado) }}</span>
                     </td>
+
+                    {{-- ══ MÉTODO DE PAGO ══ --}}
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        @php
+                            $mp = $reserva->metodo_pago ?? '';
+                            $mpData = [
+                                'efectivo'        => [' Efectivo',      'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'],
+                                'tarjeta_debito'  => [' T. Débito',     'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'],
+                                'tarjeta_credito' => [' T. Crédito',    'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300'],
+                                'tarjeta'         => [' Tarjeta',       'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'],
+                                'transferencia'   => [' Transferencia', 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'],
+                                'combinado'       => [' Combinado',     'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'],
+                                'cortesia'        => [' Cortesía',      'bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300'],
+                            ];
+                            $mpLabel = $mpData[$mp][0] ?? '— Sin método';
+                            $mpClass = $mpData[$mp][1] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
+                        @endphp
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $mpClass }}">{{ $mpLabel }}</span>
+                    </td>
+
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <div class="font-bold text-lg text-amber-700 dark:text-amber-400">
-                            ${{ number_format($reserva->total_reserva, 2) }}
-                        </div>
-                        {{-- ← Badge cortesía --}}
-                        @if(($reserva->metodo_pago ?? '') === 'cortesia')
-                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 mt-1">
-                                🎁 Cortesía
-                            </span>
-                        @endif
+                        <div class="font-bold text-lg text-amber-700 dark:text-amber-400">${{ number_format($reserva->total_reserva, 2) }}</div>
                     </td>
 
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <div class="flex flex-col gap-1">
-
-                            <button wire:click="ver({{ $reserva->idreservas }})"
-                                    class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
-                                Ver
-                            </button>
-
+                            <button wire:click="ver({{ $reserva->idreservas }})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-medium">Ver</button>
                             @if($reserva->estado != 'completada' && $reserva->estado != 'cancelada')
-                            <button type="button" wire:click.stop="editar({{ $reserva->idreservas }})"
-                                    class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
-                                Editar
-                            </button>
+                            <button type="button" wire:click.stop="editar({{ $reserva->idreservas }})" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">Editar</button>
                             @endif
-
                             @if($reserva->estado == 'confirmada' || $reserva->estado == 'pendiente')
-                            <button wire:click="eliminar({{ $reserva->idreservas }})"
-                                    wire:confirm="¿Estás seguro de cancelar esta reserva?"
-                                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">
-                                Cancelar
-                            </button>
-                            <button wire:click="liberar({{ $reserva->idreservas }})"
-                                    wire:confirm="¿Desea liberar esta reserva? Las habitaciones y estacionamiento quedarán disponibles."
-                                    class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-medium">
-                                Liberar
-                            </button>
+                            <button wire:click="eliminar({{ $reserva->idreservas }})" wire:confirm="¿Estás seguro de cancelar esta reserva?" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">Cancelar</button>
                             @endif
-
-                            <button wire:click="eliminarPermanente({{ $reserva->idreservas }})"
-                                    wire:confirm="⚠️ ADVERTENCIA: Esto eliminará la reserva PERMANENTEMENTE de la base de datos. ¿Continuar?"
-                                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">
-                                Eliminar
-                            </button>
-
+                            <button wire:click="eliminarPermanente({{ $reserva->idreservas }})" wire:confirm="⚠️ ADVERTENCIA: Esto eliminará la reserva PERMANENTEMENTE de la base de datos. ¿Continuar?" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">Eliminar</button>
                         </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="10" class="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
+                    <td colspan="11" class="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
                         <svg class="mx-auto h-12 w-12 text-zinc-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
                         <p class="text-sm">No hay reservas registradas con los filtros aplicados</p>
                     </td>
@@ -247,86 +199,61 @@
         </table>
     </div>
 
-    {{-- Modal de Estacionamiento --}}
+    {{-- Modal Estacionamiento --}}
     @if($mostrarModalEstacionamiento)
-    <div class="fixed inset-0 z-[9999] overflow-y-auto" aria-labelledby="modal-estacionamiento" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 z-[9999] overflow-y-auto" role="dialog" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-900 bg-opacity-75 dark:bg-black dark:bg-opacity-90 transition-opacity"
-                aria-hidden="true"
-                wire:click="cerrarModalEstacionamiento"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white dark:bg-zinc-900 rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative"
-                wire:click.stop>
+            <div class="fixed inset-0 bg-gray-900 bg-opacity-75 dark:bg-black dark:bg-opacity-90 transition-opacity" wire:click="cerrarModalEstacionamiento"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div class="inline-block align-bottom bg-white dark:bg-zinc-900 rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative" wire:click.stop>
                 <div class="bg-white dark:bg-zinc-900 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-zinc-700">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white" id="modal-estacionamiento">
-                            Asignar Espacio de Estacionamiento
-                        </h3>
-                        <button wire:click="cerrarModalEstacionamiento" type="button"
-                                class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Asignar Espacio de Estacionamiento</h3>
+                        <button wire:click="cerrarModalEstacionamiento" type="button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
                 </div>
                 <div class="bg-white dark:bg-zinc-900 px-6 py-4 space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Selecciona un espacio disponible
-                        </label>
-                        <select wire:model.live="espacio_seleccionado"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Selecciona un espacio disponible</label>
+                        <select wire:model.live="espacio_seleccionado" class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
                             <option value="">Sin estacionamiento</option>
                             @forelse($espacios_disponibles as $espacio)
-                                <option value="{{ $espacio->no_espacio }}">
-                                    Espacio {{ $espacio->no_espacio }}
-                                    @if($espacio->estado === 'disponible') - Disponible @else - Asignado actualmente @endif
-                                </option>
+                                <option value="{{ $espacio->no_espacio }}">Espacio {{ $espacio->no_espacio }} {{ $espacio->estado === 'disponible' ? '- Disponible' : '- Asignado actualmente' }}</option>
                             @empty
                                 <option disabled>No hay espacios disponibles</option>
                             @endforelse
                         </select>
-                        <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            <p>Total de espacios: {{ count($espacios_disponibles) }}</p>
-                        </div>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Total de espacios: {{ count($espacios_disponibles) }}</p>
                     </div>
                     @if($mostrar_form_vehiculo && $espacio_seleccionado)
                     <div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-800 space-y-4">
                         <h5 class="font-semibold text-blue-900 dark:text-blue-100">Datos del Vehículo</h5>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Vehículo *</label>
-                            <input type="text" wire:model="tipo_vehiculo_temp" placeholder="Ej: Sedán, SUV, Pickup"
-                                   class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
+                            <input type="text" wire:model="tipo_vehiculo_temp" placeholder="Ej: Sedán, SUV, Pickup" class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
                             @error('tipo_vehiculo_temp') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Descripción del Vehículo</label>
-                            <textarea wire:model="descripcion_vehiculo_temp" rows="2"
-                                      placeholder="Marca, modelo, color, placas, etc."
-                                      class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"></textarea>
+                            <textarea wire:model="descripcion_vehiculo_temp" rows="2" placeholder="Marca, modelo, color, placas, etc." class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"></textarea>
                             @error('descripcion_vehiculo_temp') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                     </div>
                     @endif
                 </div>
                 <div class="bg-gray-50 dark:bg-zinc-800 px-6 py-4 flex flex-row-reverse gap-3">
-                    <button type="button" wire:click="guardarEstacionamiento" wire:loading.attr="disabled"
-                            class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none sm:text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button type="button" wire:click="guardarEstacionamiento" wire:loading.attr="disabled" class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                         <span wire:loading.remove wire:target="guardarEstacionamiento">Guardar</span>
                         <span wire:loading wire:target="guardarEstacionamiento">Guardando...</span>
                     </button>
-                    <button type="button" wire:click="cerrarModalEstacionamiento"
-                            class="inline-flex justify-center rounded-md border border-gray-300 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 focus:outline-none sm:text-sm transition-colors">
-                        Cancelar
-                    </button>
+                    <button type="button" wire:click="cerrarModalEstacionamiento" class="inline-flex justify-center rounded-md border border-gray-300 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 sm:text-sm">Cancelar</button>
                 </div>
             </div>
         </div>
     </div>
     @endif
 
-    <div class="mt-6">
-        {{ $reservas->links() }}
-    </div>
+    <div class="mt-6">{{ $reservas->links() }}</div>
 </div>
