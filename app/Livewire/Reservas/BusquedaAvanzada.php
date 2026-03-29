@@ -13,8 +13,6 @@ class BusquedaAvanzada extends Component
     // Filtros de búsqueda
     public $folio = '';
     public $nombre_cliente = '';
-    public $correo = '';
-    public $telefono = '';
     public $no_habitacion = '';
     public $fecha_inicio = '';
     public $fecha_fin = '';
@@ -29,15 +27,13 @@ class BusquedaAvanzada extends Component
     public $mostrarFiltros = true;
 
     protected $queryString = [
-        'folio', 'nombre_cliente', 'correo', 'telefono', 'no_habitacion',
+        'folio', 'nombre_cliente', 'no_habitacion',
         'fecha_inicio', 'fecha_fin', 'estado', 'plataforma', 'metodo_pago',
         'rango_monto_min', 'rango_monto_max', 'tiene_estacionamiento', 'tipo_habitacion'
     ];
 
     public function updatingFolio() { $this->resetPage(); }
     public function updatingNombreCliente() { $this->resetPage(); }
-    public function updatingCorreo() { $this->resetPage(); }
-    public function updatingTelefono() { $this->resetPage(); }
     public function updatingNoHabitacion() { $this->resetPage(); }
     public function updatingFechaInicio() { $this->resetPage(); }
     public function updatingFechaFin() { $this->resetPage(); }
@@ -50,7 +46,7 @@ class BusquedaAvanzada extends Component
     public function limpiarFiltros()
     {
         $this->reset([
-            'folio', 'nombre_cliente', 'correo', 'telefono', 'no_habitacion',
+            'folio', 'nombre_cliente', 'no_habitacion',
             'fecha_inicio', 'fecha_fin', 'estado', 'plataforma', 'metodo_pago',
             'rango_monto_min', 'rango_monto_max', 'tiene_estacionamiento', 'tipo_habitacion'
         ]);
@@ -73,8 +69,6 @@ class BusquedaAvanzada extends Component
             ->select(
                 'reservas.*',
                 'clientes.nom_completo',
-                'clientes.correo',
-                'clientes.telefono',
                 'plat_reserva.nombre_plataforma',
                 DB::raw('MAX(habitaciones.no_habitacion) as no_habitacion'),
                 DB::raw('MAX(habitaciones.tipo) as tipo_habitacion')
@@ -102,8 +96,6 @@ class BusquedaAvanzada extends Component
                 'reservas.updated_at',
                 'reservas.facturacion',
                 'clientes.nom_completo',
-                'clientes.correo',
-                'clientes.telefono',
                 'plat_reserva.nombre_plataforma'
             );
 
@@ -114,14 +106,6 @@ class BusquedaAvanzada extends Component
 
         if ($this->nombre_cliente) {
             $query->where('clientes.nom_completo', 'like', '%' . $this->nombre_cliente . '%');
-        }
-
-        if ($this->correo) {
-            $query->where('clientes.correo', 'like', '%' . $this->correo . '%');
-        }
-
-        if ($this->telefono) {
-            $query->where('clientes.telefono', 'like', '%' . $this->telefono . '%');
         }
 
         if ($this->no_habitacion) {

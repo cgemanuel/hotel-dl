@@ -135,7 +135,6 @@ class Index extends Component
                 'reservas.fecha_check_out',
                 'reservas.estado',
                 'clientes.nom_completo',
-                'clientes.correo',
                 DB::raw('MAX(habitaciones.no_habitacion) as no_habitacion'),
                 DB::raw('(SELECT COUNT(*) FROM servicios_adicionales WHERE servicios_adicionales.reservas_idreservas = reservas.idreservas) as total_servicios')
             )
@@ -146,15 +145,13 @@ class Index extends Component
                 'reservas.fecha_check_out',
                 'reservas.estado',
                 'clientes.nom_completo',
-                'clientes.correo'
             )
             ->whereIn('reservas.estado', ['confirmada', 'completada']);
 
         if ($this->search) {
             $query->where(function($q) {
                 $q->where('clientes.nom_completo', 'like', '%' . $this->search . '%')
-                  ->orWhere('reservas.folio', 'like', '%' . $this->search . '%')
-                  ->orWhere('clientes.correo', 'like', '%' . $this->search . '%');
+                  ->orWhere('reservas.folio', 'like', '%' . $this->search . '%');
             });
         }
 

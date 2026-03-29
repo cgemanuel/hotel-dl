@@ -56,28 +56,6 @@
                            class="w-full px-3 py-2 border border-indigo-300 dark:border-indigo-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500">
                 </div>
 
-                <!-- Correo -->
-                <div>
-                    <label class="block text-sm font-medium text-indigo-800 dark:text-indigo-200 mb-1">
-                        Correo Electrónico
-                    </label>
-                    <input type="email"
-                           wire:model.live.debounce.300ms="correo"
-                           placeholder="correo@ejemplo.com"
-                           class="w-full px-3 py-2 border border-indigo-300 dark:border-indigo-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500">
-                </div>
-
-                <!-- Teléfono -->
-                <div>
-                    <label class="block text-sm font-medium text-indigo-800 dark:text-indigo-200 mb-1">
-                        Teléfono
-                    </label>
-                    <input type="text"
-                           wire:model.live.debounce.300ms="telefono"
-                           placeholder="999123456"
-                           class="w-full px-3 py-2 border border-indigo-300 dark:border-indigo-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500">
-                </div>
-
                 <!-- No. Habitación -->
                 <div>
                     <label class="block text-sm font-medium text-indigo-800 dark:text-indigo-200 mb-1">
@@ -240,14 +218,6 @@
                             <div class="text-sm font-medium text-gray-900 dark:text-white">
                                 {{ $reserva->nom_completo }}
                             </div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">
-                                {{ $reserva->correo }}
-                            </div>
-                            @if($reserva->telefono)
-                            <div class="text-xs text-gray-500 dark:text-gray-400">
-                                Tel: {{ $reserva->telefono }}
-                            </div>
-                            @endif
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">

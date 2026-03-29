@@ -36,33 +36,53 @@
                                 Información del Cliente
                             </h4>
 
-                            {{-- Selector cliente existente --}}
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Cliente Existente (opcional)
-                                </label>
-                                <select wire:model.live="cliente_id" wire:change="seleccionarCliente"
-                                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500">
-                                    <option value="">-- Nuevo Cliente --</option>
-                                    @foreach($clientes as $cliente)
-                                        <option value="{{ $cliente->idclientes }}">{{ $cliente->nom_completo }}</option>
-                                    @endforeach
-                                </select>
+                            {{-- Nombre con AUTOCOMPLETE --}}
+                            <div class="mb-4 relative" x-data="{ open: @entangle('mostrar_sugerencias') }">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Nombre Completo *
+                                        @if($cliente_existente)
+                                            <span class="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 rounded-full font-semibold">
+                                                ✓ Cliente registrado
+                                            </span>
+                                        @endif
+                                    </label>
+                                    @if($cliente_existente)
+                                        <button type="button" wire:click="limpiarClienteSeleccionado"
+                                                class="text-xs text-red-500 hover:text-red-700 underline">
+                                            Nuevo cliente
+                                        </button>
+                                    @endif
+                                </div>
+
+                                <input type="text"
+                                       wire:model.live.debounce.300ms="nom_completo"
+                                       @if($cliente_existente) readonly @endif
+                                       placeholder="Escribe el nombre para buscar o crear nuevo..."
+                                       autocomplete="off"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 @if($cliente_existente) opacity-70 cursor-not-allowed @endif">
+
+                                {{-- Sugerencias de clientes existentes --}}
+                                @if($mostrar_sugerencias && !$cliente_existente && count($sugerencias_clientes) > 0)
+                                    <div class="absolute z-50 w-full mt-1 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                                        <div class="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-zinc-700 border-b border-gray-200 dark:border-zinc-600 font-medium">
+                                            Clientes registrados — haz clic para seleccionar
+                                        </div>
+                                        @foreach($sugerencias_clientes as $sug)
+                                            <button type="button"
+                                                    wire:click="seleccionarClienteAutocomplete({{ $sug->idclientes }})"
+                                                    class="w-full text-left px-4 py-3 hover:bg-green-50 dark:hover:bg-green-900/20 border-b border-gray-100 dark:border-zinc-700 last:border-0 transition-colors">
+                                                <span class="block text-sm font-semibold text-gray-900 dark:text-white">{{ $sug->nom_completo }}</span>
+                                                <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $sug->tipo_identificacion }} · {{ $sug->pais_origen }}</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                @error('nom_completo') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                                {{-- Nombre completo --}}
-                                <div class="md:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Nombre Completo *
-                                    </label>
-                                    <input type="text" wire:model="nom_completo"
-                                           @if($cliente_existente) readonly @endif
-                                           placeholder="Ingrese el nombre completo"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 @if($cliente_existente) opacity-70 @endif">
-                                    @error('nom_completo') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-                                </div>
 
                                 {{-- Tipo de identificación --}}
                                 <div>
@@ -187,25 +207,10 @@
                                             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                             </svg>
-                                            Mostrando habitaciones <strong class="mx-1">disponibles</strong> del
+                                            Disponibles del
                                             <strong class="ml-1">{{ \Carbon\Carbon::parse($fecha_check_in)->format('d/m/Y') }}</strong>
                                             al
                                             <strong class="ml-1">{{ \Carbon\Carbon::parse($fecha_check_out)->format('d/m/Y') }}</strong>
-                                        </div>
-                                    @elseif($fecha_check_in)
-                                        <div class="mb-2 flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg px-3 py-2">
-                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                            Mostrando disponibilidad para check-in
-                                            <strong class="ml-1">{{ \Carbon\Carbon::parse($fecha_check_in)->format('d/m/Y') }}</strong>
-                                        </div>
-                                    @else
-                                        <div class="mb-2 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
-                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                            </svg>
-                                            Selecciona primero las fechas para ver disponibilidad real por fecha
                                         </div>
                                     @endif
 
@@ -249,33 +254,15 @@
                                             </button>
                                             @endforeach
                                         </div>
-
-                                        <div class="mt-2 flex flex-wrap gap-1" x-show="sel.length > 0">
-                                            @foreach($habitaciones as $hab)
-                                            <span x-show="has({{ $hab->idhabitacion }})"
-                                                  class="inline-flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded-full">
-                                                {{ $hab->no_habitacion }} · {{ $hab->tipo }}
-                                            </span>
-                                            @endforeach
-                                        </div>
-
                                     @else
                                         <div class="p-4 text-center text-sm bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
-                                            @if($fecha_check_in)
-                                                <svg class="mx-auto w-8 h-8 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                                </svg>
-                                                <p class="font-semibold text-red-700 dark:text-red-400">No hay habitaciones disponibles para las fechas seleccionadas</p>
-                                                <p class="text-xs text-red-500 dark:text-red-400 mt-1">Todas las habitaciones están reservadas o en mantenimiento en ese período</p>
-                                            @else
-                                                <p class="text-gray-500 dark:text-gray-400">No hay habitaciones disponibles en este momento</p>
-                                            @endif
+                                            <p class="font-semibold text-red-700 dark:text-red-400">No hay habitaciones disponibles</p>
                                         </div>
                                     @endif
                                 </div>
                                 {{-- /HABITACIONES --}}
 
-                                {{-- Método de Pago --}}
+                                {{-- ── MÉTODO DE PAGO ── --}}
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Método de Pago *</label>
                                     <select wire:model.live="metodo_pago"
@@ -289,17 +276,69 @@
                                         <option value="cortesia">Cortesía</option>
                                     </select>
                                     @error('metodo_pago') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-
-                                    {{-- Aviso cuando se selecciona cortesía --}}
-                                    @if($metodo_pago === 'cortesia')
-                                        <div class="mt-2 flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg text-xs text-purple-700 dark:text-purple-300">
-                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
-                                            </svg>
-                                            Esta reserva se registrará como cortesía — sin cargo al huésped.
-                                        </div>
-                                    @endif
                                 </div>
+
+                                {{-- ── DESGLOSE COMBINADO ── --}}
+                                @if($metodo_pago === 'combinado')
+                                <div class="md:col-span-2 bg-amber-50 dark:bg-amber-900/10 border-2 border-amber-300 dark:border-amber-700 rounded-xl p-4">
+                                    <h5 class="text-sm font-bold text-amber-900 dark:text-amber-100 mb-3 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                                        </svg>
+                                        Desglose del Pago Combinado
+                                        <span class="text-xs font-normal text-amber-700 dark:text-amber-300">(llena los que apliquen)</span>
+                                    </h5>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">💵 Monto Efectivo</label>
+                                            <div class="flex items-center gap-1">
+                                                <span class="text-gray-500 text-sm">$</span>
+                                                <input type="number" step="0.01" min="0" wire:model.live="monto_efectivo" placeholder="0.00"
+                                                       class="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">💳 Monto T. Débito</label>
+                                            <div class="flex items-center gap-1">
+                                                <span class="text-gray-500 text-sm">$</span>
+                                                <input type="number" step="0.01" min="0" wire:model.live="monto_tarjeta_debito" placeholder="0.00"
+                                                       class="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">💳 Monto T. Crédito</label>
+                                            <div class="flex items-center gap-1">
+                                                <span class="text-gray-500 text-sm">$</span>
+                                                <input type="number" step="0.01" min="0" wire:model.live="monto_tarjeta_credito" placeholder="0.00"
+                                                       class="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">🏦 Monto Transferencia</label>
+                                            <div class="flex items-center gap-1">
+                                                <span class="text-gray-500 text-sm">$</span>
+                                                <input type="number" step="0.01" min="0" wire:model.live="monto_transferencia" placeholder="0.00"
+                                                       class="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {{-- Suma en tiempo real --}}
+                                    @php
+                                        $sumaCombinado = floatval($monto_efectivo) + floatval($monto_tarjeta_debito) + floatval($monto_tarjeta_credito) + floatval($monto_transferencia);
+                                    @endphp
+                                    <div class="mt-3 pt-3 border-t border-amber-300 dark:border-amber-600 flex justify-between items-center">
+                                        <span class="text-xs text-amber-800 dark:text-amber-200 font-medium">Suma de montos:</span>
+                                        <span class="text-base font-bold text-amber-800 dark:text-amber-200">${{ number_format($sumaCombinado, 2) }}</span>
+                                    </div>
+                                </div>
+                                @endif
+
+                                {{-- Aviso cortesía --}}
+                                @if($metodo_pago === 'cortesia')
+                                    <div class="md:col-span-2 flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg text-xs text-purple-700 dark:text-purple-300">
+                                        Esta reserva se registrará como cortesía — sin cargo al huésped.
+                                    </div>
+                                @endif
 
                                 {{-- Total --}}
                                 <div class="md:col-span-2 bg-white dark:bg-zinc-800 p-4 rounded-lg border-2 border-gray-300 dark:border-zinc-600">

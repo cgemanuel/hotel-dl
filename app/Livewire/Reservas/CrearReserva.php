@@ -16,6 +16,10 @@ class CrearReserva extends Component
     public $direccion = '';
     public $pais_origen = 'México';
 
+    // Autocomplete
+    public $sugerencias_clientes = [];
+    public $mostrar_sugerencias = false;
+
     // Datos de la reserva
     public $folio = '';
     public $fecha_reserva;
@@ -29,7 +33,9 @@ class CrearReserva extends Component
     // Método de pago
     public $metodo_pago = '';
     public $monto_efectivo = 0;
-    public $monto_tarjeta = 0;
+    public $monto_tarjeta = 0;           // genérico (débito por defecto en combinado)
+    public $monto_tarjeta_debito = 0;    // ← nuevo campo específico
+    public $monto_tarjeta_credito = 0;   // ← nuevo campo específico
     public $monto_transferencia = 0;
 
     public $total_reserva = 0;
@@ -92,6 +98,53 @@ class CrearReserva extends Component
         ));
     }
 
+    // ── Autocomplete: buscar clientes mientras el usuario escribe ──
+    public function updatedNomCompleto($value)
+    {
+        if ($this->cliente_existente) return;
+
+        if (strlen(trim($value)) >= 2) {
+            $this->sugerencias_clientes = DB::table('clientes')
+                ->where('nom_completo', 'like', '%' . trim($value) . '%')
+                ->select('idclientes', 'nom_completo', 'tipo_identificacion', 'direccion', 'pais_origen')
+                ->limit(8)
+                ->get()
+                ->toArray();
+            $this->mostrar_sugerencias = count($this->sugerencias_clientes) > 0;
+        } else {
+            $this->sugerencias_clientes = [];
+            $this->mostrar_sugerencias = false;
+        }
+    }
+
+    // ── Seleccionar cliente desde el autocomplete ──
+    public function seleccionarClienteAutocomplete($clienteId)
+    {
+        $cliente = DB::table('clientes')->where('idclientes', $clienteId)->first();
+        if ($cliente) {
+            $this->cliente_id        = $cliente->idclientes;
+            $this->nom_completo      = $cliente->nom_completo;
+            $this->tipo_identificacion = $cliente->tipo_identificacion;
+            $this->direccion         = $cliente->direccion;
+            $this->pais_origen       = $cliente->pais_origen;
+            $this->cliente_existente = true;
+        }
+        $this->sugerencias_clientes = [];
+        $this->mostrar_sugerencias  = false;
+    }
+
+    public function limpiarClienteSeleccionado()
+    {
+        $this->cliente_existente   = false;
+        $this->cliente_id          = '';
+        $this->nom_completo        = '';
+        $this->tipo_identificacion = '';
+        $this->direccion           = '';
+        $this->pais_origen         = 'México';
+        $this->sugerencias_clientes = [];
+        $this->mostrar_sugerencias  = false;
+    }
+
     public function updatedFechaCheckIn()
     {
         $this->cargarHabitacionesDisponibles();
@@ -110,7 +163,9 @@ class CrearReserva extends Component
             'cliente_id', 'fecha_check_in', 'fecha_check_out',
             'no_personas', 'habitaciones_ids', 'plataforma_id',
             'metodo_pago', 'monto_efectivo', 'monto_tarjeta',
+            'monto_tarjeta_debito', 'monto_tarjeta_credito',
             'monto_transferencia', 'total_reserva', 'folio',
+            'sugerencias_clientes', 'mostrar_sugerencias',
         ]);
         $this->cliente_existente = false;
         $this->pais_origen = 'México';
@@ -121,6 +176,8 @@ class CrearReserva extends Component
     public function cerrar()
     {
         $this->mostrarModal = false;
+        $this->sugerencias_clientes = [];
+        $this->mostrar_sugerencias  = false;
     }
 
     public function seleccionarCliente()
@@ -158,7 +215,6 @@ class CrearReserva extends Component
             'habitaciones_ids'    => 'required|array|min:1',
             'habitaciones_ids.*'  => 'exists:habitaciones,idhabitacion',
             'plataforma_id'       => 'required|exists:plat_reserva,idplat_reserva',
-            // ← cortesia añadida a la lista de valores válidos
             'metodo_pago'         => 'required|in:efectivo,tarjeta_debito,tarjeta_credito,transferencia,combinado,cortesia',
             'total_reserva'       => 'required|numeric|min:0',
         ], [
@@ -177,11 +233,21 @@ class CrearReserva extends Component
             'total_reserva.min'            => 'El total debe ser mayor o igual a 0',
         ]);
 
+        // Validación de montos en pago combinado
         if ($this->metodo_pago === 'combinado') {
-            $total = floatval($this->monto_efectivo) + floatval($this->monto_tarjeta) + floatval($this->monto_transferencia);
-            if ($total <= 0) {
+            $totalCombinado = floatval($this->monto_efectivo)
+                + floatval($this->monto_tarjeta_debito)
+                + floatval($this->monto_tarjeta_credito)
+                + floatval($this->monto_transferencia);
+
+            if ($totalCombinado <= 0) {
                 session()->flash('error', 'Debe ingresar al menos un monto en el pago combinado.');
                 return;
+            }
+
+            // Auto-calcular total si no fue ingresado
+            if (floatval($this->total_reserva) <= 0) {
+                $this->total_reserva = $totalCombinado;
             }
         }
 
@@ -193,10 +259,19 @@ class CrearReserva extends Component
                 $this->cliente_id = DB::table('clientes')->insertGetId([
                     'nom_completo'        => $this->nom_completo,
                     'tipo_identificacion' => $this->tipo_identificacion,
+                    'no_identificacion'   => '',
                     'direccion'           => $this->direccion,
+                    'edad'                => 0,
+                    'estado_origen'       => '',
                     'pais_origen'         => $this->pais_origen,
+                    'telefono'            => '',
+                    'correo'              => '',
                 ]);
             }
+
+            // Determinar montos para guardar en BD
+            // monto_tarjeta = débito + crédito (compatibilidad columna existente)
+            $montoTarjetaTotal = floatval($this->monto_tarjeta_debito) + floatval($this->monto_tarjeta_credito);
 
             // ── Crear reserva ──
             $reserva_id = DB::table('reservas')->insertGetId([
@@ -208,7 +283,7 @@ class CrearReserva extends Component
                 'estado'                      => 'confirmada',
                 'metodo_pago'                 => $this->metodo_pago,
                 'monto_efectivo'              => floatval($this->monto_efectivo ?? 0),
-                'monto_tarjeta'               => floatval($this->monto_tarjeta ?? 0),
+                'monto_tarjeta'               => $montoTarjetaTotal,
                 'monto_transferencia'         => floatval($this->monto_transferencia ?? 0),
                 'total_reserva'               => $this->total_reserva,
                 'clientes_idclientes'         => $this->cliente_id,
@@ -223,13 +298,18 @@ class CrearReserva extends Component
 
             // ── Auditoría ──
             \App\Services\AuditService::logCreated('Reserva', $reserva_id, [
-                'folio'            => $this->folio,
-                'cliente_id'       => $this->cliente_id,
-                'habitaciones_ids' => $this->habitaciones_ids,
-                'fecha_check_in'   => $this->fecha_check_in,
-                'fecha_check_out'  => $this->fecha_check_out,
-                'estado'           => 'confirmada',
-                'total_reserva'    => $this->total_reserva,
+                'folio'              => $this->folio,
+                'cliente_id'        => $this->cliente_id,
+                'habitaciones_ids'  => $this->habitaciones_ids,
+                'fecha_check_in'    => $this->fecha_check_in,
+                'fecha_check_out'   => $this->fecha_check_out,
+                'estado'            => 'confirmada',
+                'total_reserva'     => $this->total_reserva,
+                'metodo_pago'       => $this->metodo_pago,
+                'monto_efectivo'    => $this->monto_efectivo,
+                'monto_tarjeta_debito'  => $this->monto_tarjeta_debito,
+                'monto_tarjeta_credito' => $this->monto_tarjeta_credito,
+                'monto_transferencia'   => $this->monto_transferencia,
             ]);
 
             // ── Vincular habitaciones ──

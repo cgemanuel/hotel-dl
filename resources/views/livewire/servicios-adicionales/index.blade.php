@@ -33,7 +33,7 @@
                 <label class="block text-sm font-medium text-green-800 dark:text-green-200 mb-1">Buscar</label>
                 <flux:input
                     wire:model.live.debounce.300ms="search"
-                    placeholder="Folio, nombre o correo..."
+                    placeholder="Folio o nombre"
                     icon="magnifying-glass"
                     class="w-full"
                 />
@@ -92,9 +92,6 @@
                         <div class="flex flex-col">
                             <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                                 {{ $reserva->nom_completo }}
-                            </span>
-                            <span class="text-xs text-zinc-500 dark:text-zinc-400 break-all">
-                                {{ $reserva->correo }}
                             </span>
                         </div>
                     </td>
