@@ -52,6 +52,12 @@ class Index extends Component
 
     public $edit_metodo_pago = '';
 
+    // ── Campos de montos para editar ──
+    public $edit_monto_efectivo        = 0;
+    public $edit_monto_tarjeta_debito  = 0;
+    public $edit_monto_tarjeta_credito = 0;
+    public $edit_monto_transferencia   = 0;
+
     public $edit_habitaciones_ids = [];
     public $edit_habitaciones_disponibles = [];
 
@@ -136,16 +142,8 @@ class Index extends Component
             if (!$reserva) throw new \Exception('Reserva no encontrada');
 
             AuditService::logUpdated('Reserva', $this->reserva_para_estacionamiento,
-                [
-                    'estacionamiento_no_espacio' => $reserva->estacionamiento_no_espacio,
-                    'tipo_vehiculo'              => $reserva->tipo_vehiculo,
-                    'descripcion_vehiculo'       => $reserva->descripcion_vehiculo,
-                ],
-                [
-                    'estacionamiento_no_espacio' => $this->espacio_seleccionado ?: null,
-                    'tipo_vehiculo'              => $this->tipo_vehiculo_temp ?: null,
-                    'descripcion_vehiculo'       => $this->descripcion_vehiculo_temp ?: null,
-                ]
+                ['estacionamiento_no_espacio' => $reserva->estacionamiento_no_espacio],
+                ['estacionamiento_no_espacio' => $this->espacio_seleccionado ?: null]
             );
 
             if ($reserva->estacionamiento_no_espacio &&
@@ -200,7 +198,7 @@ class Index extends Component
     }
 
     // ══════════════════════════════════════════════════════════
-    // VER
+    // VER — carga todos los montos
     // ══════════════════════════════════════════════════════════
 
     public function ver($id)
@@ -241,7 +239,7 @@ class Index extends Component
     }
 
     // ══════════════════════════════════════════════════════════
-    // EDITAR  ← solo permitido para confirmada / pendiente
+    // EDITAR — carga montos individuales
     // ══════════════════════════════════════════════════════════
 
     public function editar($id)
@@ -253,7 +251,6 @@ class Index extends Component
             return;
         }
 
-        // Bloquear edición de completadas y canceladas
         if (in_array($reserva->estado, ['completada', 'cancelada'])) {
             session()->flash('error', 'No se puede editar una reserva ' . $reserva->estado . '. Usa "Revertir" si necesitas corregirla.');
             return;
@@ -283,6 +280,28 @@ class Index extends Component
         $this->edit_estacionamiento_no_espacio  = $reserva->estacionamiento_no_espacio;
         $this->edit_tipo_vehiculo               = $reserva->tipo_vehiculo;
         $this->edit_descripcion_vehiculo        = $reserva->descripcion_vehiculo;
+
+        // ── Cargar montos individuales ──
+        $this->edit_monto_efectivo        = floatval($reserva->monto_efectivo ?? 0);
+        $this->edit_monto_transferencia   = floatval($reserva->monto_transferencia ?? 0);
+
+        // Compatibilidad: si existen las nuevas columnas úsalas
+        $tieneNuevasColumnas = DB::getSchemaBuilder()->hasColumn('reservas', 'monto_tarjeta_debito');
+
+        if ($tieneNuevasColumnas) {
+            $this->edit_monto_tarjeta_debito  = floatval($reserva->monto_tarjeta_debito ?? 0);
+            $this->edit_monto_tarjeta_credito = floatval($reserva->monto_tarjeta_credito ?? 0);
+        } else {
+            // Compatibilidad con columna antigua
+            $montoTarjeta = floatval($reserva->monto_tarjeta ?? 0);
+            if ($reserva->metodo_pago === 'tarjeta_credito') {
+                $this->edit_monto_tarjeta_debito  = 0;
+                $this->edit_monto_tarjeta_credito = $montoTarjeta;
+            } else {
+                $this->edit_monto_tarjeta_debito  = $montoTarjeta;
+                $this->edit_monto_tarjeta_credito = 0;
+            }
+        }
 
         $this->plataformas = DB::table('plat_reserva')->get();
 
@@ -323,6 +342,8 @@ class Index extends Component
             'edit_tipo_vehiculo', 'edit_descripcion_vehiculo',
             'edit_nom_completo', 'edit_tipo_identificacion', 'edit_direccion',
             'edit_pais_origen', 'edit_plataforma_id', 'edit_metodo_pago',
+            'edit_monto_efectivo', 'edit_monto_tarjeta_debito',
+            'edit_monto_tarjeta_credito', 'edit_monto_transferencia',
             'edit_habitaciones_ids', 'edit_habitaciones_disponibles',
             'espacios_disponibles', 'plataformas',
         ]);
@@ -359,34 +380,21 @@ class Index extends Component
                 ->where('idclientes', $reservaActual->clientes_idclientes)
                 ->first();
 
+            // Calcular monto_tarjeta = débito + crédito (compatibilidad columna existente)
+            $montoTarjetaTotal = floatval($this->edit_monto_tarjeta_debito) + floatval($this->edit_monto_tarjeta_credito);
+
             AuditService::logUpdated('Reserva', $this->editando_id,
                 [
-                    'folio'                      => $reservaActual->folio,
-                    'fecha_reserva'              => $reservaActual->fecha_reserva,
-                    'fecha_check_in'             => $reservaActual->fecha_check_in,
-                    'fecha_check_out'            => $reservaActual->fecha_check_out,
-                    'no_personas'                => $reservaActual->no_personas,
-                    'estado'                     => $reservaActual->estado,
-                    'estacionamiento_no_espacio' => $reservaActual->estacionamiento_no_espacio,
-                    'total_reserva'              => $reservaActual->total_reserva,
-                    'metodo_pago'                => $reservaActual->metodo_pago,
-                    'nom_completo'               => $clienteActual->nom_completo ?? null,
-                    'tipo_identificacion'        => $clienteActual->tipo_identificacion ?? null,
-                    'plataforma_id'              => $reservaActual->plat_reserva_idplat_reserva,
+                    'folio'          => $reservaActual->folio,
+                    'estado'         => $reservaActual->estado,
+                    'metodo_pago'    => $reservaActual->metodo_pago,
+                    'total_reserva'  => $reservaActual->total_reserva,
                 ],
                 [
-                    'folio'                      => $this->edit_folio,
-                    'fecha_reserva'              => $this->edit_fecha_reserva,
-                    'fecha_check_in'             => $this->edit_fecha_check_in,
-                    'fecha_check_out'            => $this->edit_fecha_check_out,
-                    'no_personas'                => $this->edit_no_personas,
-                    'estado'                     => $this->edit_estado,
-                    'estacionamiento_no_espacio' => $this->edit_estacionamiento_no_espacio ?: null,
-                    'total_reserva'              => $this->edit_total_reserva,
-                    'metodo_pago'                => $this->edit_metodo_pago,
-                    'nom_completo'               => $this->edit_nom_completo,
-                    'tipo_identificacion'        => $this->edit_tipo_identificacion,
-                    'plataforma_id'              => $this->edit_plataforma_id,
+                    'folio'          => $this->edit_folio,
+                    'estado'         => $this->edit_estado,
+                    'metodo_pago'    => $this->edit_metodo_pago,
+                    'total_reserva'  => $this->edit_total_reserva,
                 ]
             );
 
@@ -406,23 +414,35 @@ class Index extends Component
                 }
             }
 
+            // Datos a actualizar
+            $updateData = [
+                'folio'                       => $this->edit_folio,
+                'fecha_reserva'               => $this->edit_fecha_reserva,
+                'fecha_check_in'              => $this->edit_fecha_check_in,
+                'fecha_check_out'             => $this->edit_fecha_check_out,
+                'no_personas'                 => $this->edit_no_personas,
+                'estado'                      => $this->edit_estado,
+                'estacionamiento_no_espacio'  => $estacionamientoNuevo,
+                'total_reserva'               => $this->edit_total_reserva,
+                'tipo_vehiculo'               => $this->edit_tipo_vehiculo ?: null,
+                'descripcion_vehiculo'        => $this->edit_descripcion_vehiculo ?: null,
+                'metodo_pago'                 => $this->edit_metodo_pago,
+                'monto_efectivo'              => floatval($this->edit_monto_efectivo),
+                'monto_tarjeta'               => $montoTarjetaTotal,
+                'monto_transferencia'         => floatval($this->edit_monto_transferencia),
+                'plat_reserva_idplat_reserva' => $this->edit_plataforma_id ?: null,
+                'updated_at'                  => now(),
+            ];
+
+            // Si existen las nuevas columnas, guardar también
+            if (DB::getSchemaBuilder()->hasColumn('reservas', 'monto_tarjeta_debito')) {
+                $updateData['monto_tarjeta_debito']  = floatval($this->edit_monto_tarjeta_debito);
+                $updateData['monto_tarjeta_credito'] = floatval($this->edit_monto_tarjeta_credito);
+            }
+
             DB::table('reservas')
                 ->where('idreservas', $this->editando_id)
-                ->update([
-                    'folio'                       => $this->edit_folio,
-                    'fecha_reserva'               => $this->edit_fecha_reserva,
-                    'fecha_check_in'              => $this->edit_fecha_check_in,
-                    'fecha_check_out'             => $this->edit_fecha_check_out,
-                    'no_personas'                 => $this->edit_no_personas,
-                    'estado'                      => $this->edit_estado,
-                    'estacionamiento_no_espacio'  => $estacionamientoNuevo,
-                    'total_reserva'               => $this->edit_total_reserva,
-                    'tipo_vehiculo'               => $this->edit_tipo_vehiculo ?: null,
-                    'descripcion_vehiculo'        => $this->edit_descripcion_vehiculo ?: null,
-                    'metodo_pago'                 => $this->edit_metodo_pago,
-                    'plat_reserva_idplat_reserva' => $this->edit_plataforma_id ?: null,
-                    'updated_at'                  => now(),
-                ]);
+                ->update($updateData);
 
             if ($clienteActual) {
                 DB::table('clientes')
@@ -466,7 +486,6 @@ class Index extends Component
             }
 
             DB::commit();
-
             session()->flash('message', 'Reserva actualizada exitosamente.');
             $this->cerrarModalEditar();
             $this->dispatch('reserva-actualizada');
@@ -488,38 +507,30 @@ class Index extends Component
             $reserva = DB::table('reservas')->where('idreservas', $id)->first();
 
             if ($reserva) {
-                AuditService::logUpdated('Reserva', $id,
-                    ['estado' => $reserva->estado],
-                    ['estado' => 'cancelada']
-                );
+                AuditService::logUpdated('Reserva', $id, ['estado' => $reserva->estado], ['estado' => 'cancelada']);
 
                 DB::table('reservas')->where('idreservas', $id)
                     ->update(['estado' => 'cancelada', 'updated_at' => now()]);
 
                 $habitaciones = DB::table('habitaciones_has_reservas')
-                    ->where('reservas_idreservas', $id)
-                    ->pluck('habitaciones_idhabitacion');
+                    ->where('reservas_idreservas', $id)->pluck('habitaciones_idhabitacion');
 
                 foreach ($habitaciones as $habitacionId) {
-                    DB::table('habitaciones')
-                        ->where('idhabitacion', $habitacionId)
+                    DB::table('habitaciones')->where('idhabitacion', $habitacionId)
                         ->update(['estado' => 'disponible']);
                 }
 
                 if ($reserva->estacionamiento_no_espacio) {
-                    DB::table('estacionamiento')
-                        ->where('no_espacio', $reserva->estacionamiento_no_espacio)
+                    DB::table('estacionamiento')->where('no_espacio', $reserva->estacionamiento_no_espacio)
                         ->update(['estado' => 'disponible']);
                 }
 
                 DB::commit();
                 session()->flash('message', 'Reserva cancelada exitosamente.');
-            } else {
-                session()->flash('error', 'Reserva no encontrada.');
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            session()->flash('error', 'Error al cancelar la reserva: ' . $e->getMessage());
+            session()->flash('error', 'Error al cancelar: ' . $e->getMessage());
         }
     }
 
@@ -530,46 +541,34 @@ class Index extends Component
             $reserva = DB::table('reservas')->where('idreservas', $id)->first();
 
             if ($reserva) {
-                AuditService::logUpdated('Reserva', $id,
-                    ['estado' => $reserva->estado],
-                    ['estado' => 'completada']
-                );
+                AuditService::logUpdated('Reserva', $id, ['estado' => $reserva->estado], ['estado' => 'completada']);
 
                 DB::table('reservas')->where('idreservas', $id)
                     ->update(['estado' => 'completada', 'updated_at' => now()]);
 
                 $habitaciones = DB::table('habitaciones_has_reservas')
-                    ->where('reservas_idreservas', $id)
-                    ->pluck('habitaciones_idhabitacion');
+                    ->where('reservas_idreservas', $id)->pluck('habitaciones_idhabitacion');
 
                 foreach ($habitaciones as $habitacionId) {
-                    DB::table('habitaciones')
-                        ->where('idhabitacion', $habitacionId)
+                    DB::table('habitaciones')->where('idhabitacion', $habitacionId)
                         ->update(['estado' => 'disponible']);
                 }
 
                 if ($reserva->estacionamiento_no_espacio) {
-                    DB::table('estacionamiento')
-                        ->where('no_espacio', $reserva->estacionamiento_no_espacio)
+                    DB::table('estacionamiento')->where('no_espacio', $reserva->estacionamiento_no_espacio)
                         ->update(['estado' => 'disponible']);
                 }
 
                 DB::commit();
-                session()->flash('message', 'Reserva liberada exitosamente. Estado: COMPLETADA');
+                session()->flash('message', 'Reserva liberada. Estado: COMPLETADA');
                 $this->dispatch('reserva-actualizada');
-            } else {
-                session()->flash('error', 'Reserva no encontrada.');
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            session()->flash('error', 'Error al liberar la reserva: ' . $e->getMessage());
+            session()->flash('error', 'Error al liberar: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Revertir una reserva completada → confirmada
-     * Reactiva habitaciones y estacionamiento
-     */
     public function revertirCompletada($id)
     {
         try {
@@ -582,38 +581,33 @@ class Index extends Component
                 return;
             }
 
-            if ($reserva->estado !== 'completada') {
-                session()->flash('error', 'Solo se pueden revertir reservas con estado "completada".');
+            if (!in_array($reserva->estado, ['completada', 'cancelada'])) {
+                session()->flash('error', 'Solo se pueden revertir reservas completadas o canceladas.');
                 DB::rollBack();
                 return;
             }
 
             AuditService::logUpdated('Reserva', $id,
-                ['estado' => 'completada'],
+                ['estado' => $reserva->estado],
                 ['estado' => 'confirmada', 'motivo' => 'Revertida por error de usuario']
             );
 
             DB::table('reservas')->where('idreservas', $id)
                 ->update(['estado' => 'confirmada', 'updated_at' => now()]);
 
-            // Reactivar habitaciones si el check-in ya pasó (o es hoy)
             $hoy = now()->toDateString();
             if ($reserva->fecha_check_in <= $hoy && $reserva->fecha_check_out > $hoy) {
                 $habitaciones = DB::table('habitaciones_has_reservas')
-                    ->where('reservas_idreservas', $id)
-                    ->pluck('habitaciones_idhabitacion');
+                    ->where('reservas_idreservas', $id)->pluck('habitaciones_idhabitacion');
 
                 foreach ($habitaciones as $habitacionId) {
-                    DB::table('habitaciones')
-                        ->where('idhabitacion', $habitacionId)
+                    DB::table('habitaciones')->where('idhabitacion', $habitacionId)
                         ->update(['estado' => 'ocupada']);
                 }
             }
 
-            // Reactivar estacionamiento si tenía asignado
             if ($reserva->estacionamiento_no_espacio) {
-                DB::table('estacionamiento')
-                    ->where('no_espacio', $reserva->estacionamiento_no_espacio)
+                DB::table('estacionamiento')->where('no_espacio', $reserva->estacionamiento_no_espacio)
                     ->update(['estado' => 'ocupado']);
             }
 
@@ -635,26 +629,22 @@ class Index extends Component
 
             if ($reserva) {
                 AuditService::logDeleted('Reserva', $id, [
-                    'folio'           => $reserva->folio,
-                    'cliente_id'      => $reserva->clientes_idclientes,
-                    'estado'          => $reserva->estado,
-                    'fecha_check_in'  => $reserva->fecha_check_in,
-                    'fecha_check_out' => $reserva->fecha_check_out,
+                    'folio'          => $reserva->folio,
+                    'cliente_id'     => $reserva->clientes_idclientes,
+                    'estado'         => $reserva->estado,
+                    'fecha_check_in' => $reserva->fecha_check_in,
                 ]);
 
                 $habitaciones = DB::table('habitaciones_has_reservas')
-                    ->where('reservas_idreservas', $id)
-                    ->pluck('habitaciones_idhabitacion');
+                    ->where('reservas_idreservas', $id)->pluck('habitaciones_idhabitacion');
 
                 foreach ($habitaciones as $habitacionId) {
-                    DB::table('habitaciones')
-                        ->where('idhabitacion', $habitacionId)
+                    DB::table('habitaciones')->where('idhabitacion', $habitacionId)
                         ->update(['estado' => 'disponible']);
                 }
 
                 if ($reserva->estacionamiento_no_espacio) {
-                    DB::table('estacionamiento')
-                        ->where('no_espacio', $reserva->estacionamiento_no_espacio)
+                    DB::table('estacionamiento')->where('no_espacio', $reserva->estacionamiento_no_espacio)
                         ->update(['estado' => 'disponible']);
                 }
 
@@ -682,21 +672,11 @@ class Index extends Component
             ->leftJoin('habitaciones_has_reservas', 'reservas.idreservas', '=', 'habitaciones_has_reservas.reservas_idreservas')
             ->leftJoin('habitaciones', 'habitaciones_has_reservas.habitaciones_idhabitacion', '=', 'habitaciones.idhabitacion')
             ->select(
-                'reservas.idreservas',
-                'reservas.folio',
-                'reservas.fecha_reserva',
-                'reservas.fecha_check_in',
-                'reservas.fecha_check_out',
-                'reservas.no_personas',
-                'reservas.estado',
-                'reservas.metodo_pago',
-                'reservas.estacionamiento_no_espacio',
-                'reservas.total_reserva',
-                'reservas.tipo_vehiculo',
-                'reservas.descripcion_vehiculo',
-                'clientes.nom_completo',
-                'plat_reserva.nombre_plataforma',
-                'plat_reserva.comision',
+                'reservas.idreservas', 'reservas.folio', 'reservas.fecha_reserva',
+                'reservas.fecha_check_in', 'reservas.fecha_check_out', 'reservas.no_personas',
+                'reservas.estado', 'reservas.metodo_pago', 'reservas.estacionamiento_no_espacio',
+                'reservas.total_reserva', 'reservas.tipo_vehiculo', 'reservas.descripcion_vehiculo',
+                'clientes.nom_completo', 'plat_reserva.nombre_plataforma', 'plat_reserva.comision',
                 DB::raw('GROUP_CONCAT(DISTINCT habitaciones.no_habitacion ORDER BY habitaciones.no_habitacion SEPARATOR ", ") as no_habitacion'),
                 DB::raw('GROUP_CONCAT(DISTINCT habitaciones.tipo ORDER BY habitaciones.no_habitacion SEPARATOR ", ") as tipo_habitacion'),
                 DB::raw('COUNT(DISTINCT habitaciones.idhabitacion) as total_habitaciones')
@@ -739,6 +719,10 @@ class Index extends Component
             'espacios_disponibles'          => $this->espacios_disponibles,
             'editando_id'                   => $this->editando_id,
             'plataformas'                   => $this->plataformas,
+            'edit_monto_efectivo'           => $this->edit_monto_efectivo,
+            'edit_monto_tarjeta_debito'     => $this->edit_monto_tarjeta_debito,
+            'edit_monto_tarjeta_credito'    => $this->edit_monto_tarjeta_credito,
+            'edit_monto_transferencia'      => $this->edit_monto_transferencia,
         ]);
     }
 }

@@ -134,21 +134,14 @@
                             <label class="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                                 {{ $habitacionesReserva->count() === 1 ? 'Habitación' : 'Habitaciones ('.$habitacionesReserva->count().')' }}
                             </label>
-                            @if($habitacionesReserva->count() === 1)
-                                <p class="text-lg font-bold text-green-600 dark:text-green-400 mt-1">No. {{ $habitacionesReserva->first()->no_habitacion }}</p>
-                                <p class="text-xs capitalize text-zinc-500 dark:text-zinc-400">{{ $habitacionesReserva->first()->tipo }}</p>
-                            @else
-                                <div class="mt-2 flex flex-wrap gap-2">
-                                    @foreach($habitacionesReserva as $hab)
-                                    <div class="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg">
-                                        <div>
-                                            <span class="block text-sm font-bold text-green-700 dark:text-green-300 leading-tight">No. {{ $hab->no_habitacion }}</span>
-                                            <span class="block text-xs capitalize text-zinc-500 dark:text-zinc-400 leading-tight">{{ $hab->tipo }}</span>
-                                        </div>
-                                    </div>
-                                    @endforeach
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                @foreach($habitacionesReserva as $hab)
+                                <div class="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg">
+                                    <span class="block text-sm font-bold text-green-700 dark:text-green-300">No. {{ $hab->no_habitacion }}</span>
+                                    <span class="block text-xs capitalize text-zinc-500 dark:text-zinc-400">{{ $hab->tipo }}</span>
                                 </div>
-                            @endif
+                                @endforeach
+                            </div>
                         </div>
                         @endif
 
@@ -158,11 +151,9 @@
                             <p class="text-sm font-semibold">Espacio No. {{ $reservaSeleccionada['no_espacio'] }}</p>
                             @if(!empty($reservaSeleccionada['tipo_vehiculo']))
                             <div class="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                                <p class="text-xs text-zinc-600 dark:text-zinc-400">Tipo de Vehículo:</p>
-                                <p class="text-sm font-medium">{{ $reservaSeleccionada['tipo_vehiculo'] }}</p>
+                                <p class="text-xs text-zinc-600 dark:text-zinc-400">Tipo de Vehículo: <span class="font-medium text-zinc-900 dark:text-white">{{ $reservaSeleccionada['tipo_vehiculo'] }}</span></p>
                                 @if(!empty($reservaSeleccionada['descripcion_vehiculo']))
-                                <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1">Descripción:</p>
-                                <p class="text-sm">{{ $reservaSeleccionada['descripcion_vehiculo'] }}</p>
+                                <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1">Descripción: <span class="text-zinc-800 dark:text-zinc-200">{{ $reservaSeleccionada['descripcion_vehiculo'] }}</span></p>
                                 @endif
                             </div>
                             @endif
@@ -179,7 +170,7 @@
                     </div>
                 </div>
 
-                <!-- Acordeón 3: Costo Total + Método de Pago -->
+                <!-- Acordeón 3: Costo Total + Método de Pago COMPLETO -->
                 <div class="border border-amber-200 dark:border-amber-800 rounded-lg overflow-hidden">
                     <button @click="activeSection = activeSection === 'costo' ? null : 'costo'"
                             class="w-full px-4 py-3 bg-amber-50 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors flex items-center justify-between">
@@ -187,7 +178,7 @@
                             <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
-                            <h4 class="text-lg font-semibold text-amber-900 dark:text-amber-100">Costo y Pago</h4>
+                            <h4 class="text-lg font-semibold text-amber-900 dark:text-amber-100">Costo y Método de Pago</h4>
                         </div>
                         <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 transition-transform duration-200" :class="{ 'rotate-180': activeSection === 'costo' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -196,44 +187,140 @@
 
                     <div x-show="activeSection === 'costo'" x-collapse class="px-4 py-4 bg-amber-50 dark:bg-amber-900/10 space-y-4">
 
-                        {{-- Total --}}
-                        <div class="flex justify-between text-2xl font-bold bg-amber-100 dark:bg-amber-900/30 p-4 rounded-lg">
-                            <span>Total:</span>
+                        {{-- Total general --}}
+                        <div class="flex justify-between items-center text-2xl font-bold bg-amber-100 dark:bg-amber-900/30 p-4 rounded-lg">
+                            <span class="text-gray-800 dark:text-gray-100">Total:</span>
                             <span class="text-green-600 dark:text-green-400">
                                 ${{ number_format($reservaSeleccionada['total_reserva'] ?? 0, 2) }}
                             </span>
                         </div>
 
-                        {{-- ══ MÉTODO DE PAGO ══ --}}
+                        {{-- ══ DESGLOSE SEGÚN MÉTODO DE PAGO ══ --}}
                         @php
-                            $mpVal = $reservaSeleccionada['metodo_pago'] ?? '';
-                            $mpMap = [
-                                'efectivo'        => ['💵 Efectivo',      'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'],
-                                'tarjeta_debito'  => ['💳 T. Débito',     'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'],
-                                'tarjeta_credito' => ['💳 T. Crédito',    'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300'],
-                                'tarjeta'         => ['💳 Tarjeta',       'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'],
-                                'transferencia'   => ['🏦 Transferencia', 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'],
-                                'combinado'       => ['🔀 Combinado',     'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'],
-                                'cortesia'        => ['🎁 Cortesía',      'bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300'],
+                            $mp              = $reservaSeleccionada['metodo_pago'] ?? '';
+                            $montoEfectivo   = floatval($reservaSeleccionada['monto_efectivo'] ?? 0);
+                            $montoTarjeta    = floatval($reservaSeleccionada['monto_tarjeta'] ?? 0);
+                            $montoDebito     = floatval($reservaSeleccionada['monto_tarjeta_debito'] ?? 0);
+                            $montoCredito    = floatval($reservaSeleccionada['monto_tarjeta_credito'] ?? 0);
+                            $montoTransfer   = floatval($reservaSeleccionada['monto_transferencia'] ?? 0);
+
+                            // Compatibilidad: si existen las nuevas columnas úsalas, si no usa monto_tarjeta
+                            if ($montoDebito == 0 && $montoCredito == 0 && $montoTarjeta > 0) {
+                                if ($mp === 'tarjeta_credito') {
+                                    $montoCredito = $montoTarjeta;
+                                } else {
+                                    $montoDebito = $montoTarjeta;
+                                }
+                            }
+
+                            $mpLabels = [
+                                'efectivo'        => ['💵 Efectivo',       'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'],
+                                'tarjeta_debito'  => ['💳 Tarjeta de Débito',  'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'],
+                                'tarjeta_credito' => ['💳 Tarjeta de Crédito', 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300'],
+                                'tarjeta'         => ['💳 Tarjeta',            'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'],
+                                'transferencia'   => ['🏦 Transferencia',      'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'],
+                                'combinado'       => ['🔀 Pago Combinado',     'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'],
+                                'cortesia'        => ['🎁 Cortesía',           'bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300'],
                             ];
-                            $mpViewLabel = $mpMap[$mpVal][0] ?? '— Sin método registrado';
-                            $mpViewClass = $mpMap[$mpVal][1] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
+                            $mpLabel = $mpLabels[$mp][0] ?? '— Sin método';
+                            $mpClass = $mpLabels[$mp][1] ?? 'bg-gray-100 text-gray-500';
                         @endphp
-                        <div class="bg-white dark:bg-zinc-800 p-3 rounded-lg flex items-center justify-between">
-                            <div>
-                                <label class="text-xs font-medium text-zinc-500 dark:text-zinc-400">Método de Pago</label>
-                                <p class="mt-1">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold {{ $mpViewClass }}">
-                                        {{ $mpViewLabel }}
-                                    </span>
-                                </p>
-                            </div>
+
+                        {{-- Badge del método --}}
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-medium text-zinc-500 dark:text-zinc-400">Método:</span>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold {{ $mpClass }}">
+                                {{ $mpLabel }}
+                            </span>
                         </div>
 
+                        {{-- Desglose de montos --}}
+                        @if($mp === 'combinado')
+                            {{-- PAGO COMBINADO: mostrar cada método con su monto --}}
+                            <div class="bg-white dark:bg-zinc-800 rounded-lg border border-amber-200 dark:border-amber-700 overflow-hidden">
+                                <div class="px-4 py-2 bg-amber-100 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700">
+                                    <p class="text-xs font-bold text-amber-800 dark:text-amber-200 uppercase tracking-wide">Desglose del Pago Combinado</p>
+                                </div>
+                                <div class="divide-y divide-gray-100 dark:divide-zinc-700">
+                                    @if($montoEfectivo > 0)
+                                    <div class="flex justify-between items-center px-4 py-3">
+                                        <span class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+                                            💵 Efectivo
+                                        </span>
+                                        <span class="text-sm font-bold text-green-700 dark:text-green-400">${{ number_format($montoEfectivo, 2) }}</span>
+                                    </div>
+                                    @endif
+                                    @if($montoDebito > 0)
+                                    <div class="flex justify-between items-center px-4 py-3">
+                                        <span class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>
+                                            💳 Tarjeta de Débito
+                                        </span>
+                                        <span class="text-sm font-bold text-blue-700 dark:text-blue-400">${{ number_format($montoDebito, 2) }}</span>
+                                    </div>
+                                    @endif
+                                    @if($montoCredito > 0)
+                                    <div class="flex justify-between items-center px-4 py-3">
+                                        <span class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-indigo-500 inline-block"></span>
+                                            💳 Tarjeta de Crédito
+                                        </span>
+                                        <span class="text-sm font-bold text-indigo-700 dark:text-indigo-400">${{ number_format($montoCredito, 2) }}</span>
+                                    </div>
+                                    @endif
+                                    @if($montoTransfer > 0)
+                                    <div class="flex justify-between items-center px-4 py-3">
+                                        <span class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-purple-500 inline-block"></span>
+                                            🏦 Transferencia
+                                        </span>
+                                        <span class="text-sm font-bold text-purple-700 dark:text-purple-400">${{ number_format($montoTransfer, 2) }}</span>
+                                    </div>
+                                    @endif
+                                </div>
+                                <div class="flex justify-between items-center px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-700">
+                                    <span class="text-sm font-bold text-amber-800 dark:text-amber-200">Total combinado:</span>
+                                    <span class="text-sm font-bold text-amber-800 dark:text-amber-200">
+                                        ${{ number_format($montoEfectivo + $montoDebito + $montoCredito + $montoTransfer, 2) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                        @elseif($mp === 'efectivo' && $montoEfectivo > 0)
+                            <div class="flex justify-between items-center bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 px-4 py-3 rounded-lg">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">💵 Monto en efectivo</span>
+                                <span class="text-sm font-bold text-green-700 dark:text-green-400">${{ number_format($montoEfectivo, 2) }}</span>
+                            </div>
+
+                        @elseif($mp === 'tarjeta_debito' && $montoDebito > 0)
+                            <div class="flex justify-between items-center bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 px-4 py-3 rounded-lg">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">💳 Monto en Tarjeta de Débito</span>
+                                <span class="text-sm font-bold text-blue-700 dark:text-blue-400">${{ number_format($montoDebito, 2) }}</span>
+                            </div>
+
+                        @elseif($mp === 'tarjeta_credito' && $montoCredito > 0)
+                            <div class="flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 px-4 py-3 rounded-lg">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">💳 Monto en Tarjeta de Crédito</span>
+                                <span class="text-sm font-bold text-indigo-700 dark:text-indigo-400">${{ number_format($montoCredito, 2) }}</span>
+                            </div>
+
+                        @elseif($mp === 'transferencia' && $montoTransfer > 0)
+                            <div class="flex justify-between items-center bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 px-4 py-3 rounded-lg">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">🏦 Monto en Transferencia</span>
+                                <span class="text-sm font-bold text-purple-700 dark:text-purple-400">${{ number_format($montoTransfer, 2) }}</span>
+                            </div>
+
+                        @elseif($mp === 'cortesia')
+                            <div class="flex items-center gap-2 bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-700 px-4 py-3 rounded-lg">
+                                <span class="text-sm text-pink-700 dark:text-pink-300">🎁 Esta reserva fue registrada como cortesía — sin cargo al huésped.</span>
+                            </div>
+                        @endif
+
                         @if(!empty($reservaSeleccionada['nombre_plataforma']) && !empty($reservaSeleccionada['comision']))
-                        <div class="pt-3 border-t border-amber-200 dark:border-amber-800">
-                            <p class="text-xs text-zinc-600 dark:text-zinc-400">Plataforma: {{ $reservaSeleccionada['nombre_plataforma'] }}</p>
-                            <p class="text-xs text-orange-600 dark:text-orange-400">Comisión: {{ $reservaSeleccionada['comision'] }}%</p>
+                        <div class="pt-3 border-t border-amber-200 dark:border-amber-800 flex justify-between text-xs">
+                            <span class="text-zinc-500 dark:text-zinc-400">Plataforma: <strong>{{ $reservaSeleccionada['nombre_plataforma'] }}</strong></span>
+                            <span class="text-orange-600 dark:text-orange-400">Comisión: {{ $reservaSeleccionada['comision'] }}%</span>
                         </div>
                         @endif
 

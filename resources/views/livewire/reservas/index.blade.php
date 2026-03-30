@@ -149,18 +149,17 @@
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $estadoClasses }}">{{ ucfirst($reserva->estado) }}</span>
                     </td>
 
-                    {{-- ══ MÉTODO DE PAGO ══ --}}
                     <td class="px-6 py-4 whitespace-nowrap">
                         @php
                             $mp = $reserva->metodo_pago ?? '';
                             $mpData = [
-                                'efectivo'        => [' Efectivo',      'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'],
-                                'tarjeta_debito'  => [' T. Débito',     'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'],
-                                'tarjeta_credito' => [' T. Crédito',    'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300'],
-                                'tarjeta'         => [' Tarjeta',       'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'],
-                                'transferencia'   => [' Transferencia', 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'],
-                                'combinado'       => [' Combinado',     'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'],
-                                'cortesia'        => [' Cortesía',      'bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300'],
+                                'efectivo'        => ['Efectivo',      'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'],
+                                'tarjeta_debito'  => ['T. Débito',     'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'],
+                                'tarjeta_credito' => ['T. Crédito',    'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300'],
+                                'tarjeta'         => ['Tarjeta',       'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'],
+                                'transferencia'   => ['Transferencia', 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'],
+                                'combinado'       => ['Combinado',     'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'],
+                                'cortesia'        => ['Cortesía',      'bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300'],
                             ];
                             $mpLabel = $mpData[$mp][0] ?? '— Sin método';
                             $mpClass = $mpData[$mp][1] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
@@ -172,18 +171,51 @@
                         <div class="font-bold text-lg text-amber-700 dark:text-amber-400">${{ number_format($reserva->total_reserva, 2) }}</div>
                     </td>
 
+                    {{-- ══ ACCIONES ══ --}}
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <div class="flex flex-col gap-1">
-                            <button wire:click="ver({{ $reserva->idreservas }})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-medium">Ver</button>
-                            @if($reserva->estado != 'completada' && $reserva->estado != 'cancelada')
-                            <button type="button" wire:click.stop="editar({{ $reserva->idreservas }})" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">Editar</button>
+
+                            {{-- Ver: siempre disponible --}}
+                            <button wire:click="ver({{ $reserva->idreservas }})"
+                                    class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-left">
+                                Ver
+                            </button>
+
+                            {{-- Editar: solo confirmada / pendiente --}}
+                            @if($reserva->estado === 'confirmada' || $reserva->estado === 'pendiente')
+                                <button type="button" wire:click.stop="editar({{ $reserva->idreservas }})"
+                                        class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-left">
+                                    Editar
+                                </button>
                             @endif
-                            @if($reserva->estado == 'confirmada' || $reserva->estado == 'pendiente')
-                            <button wire:click="eliminar({{ $reserva->idreservas }})" wire:confirm="¿Estás seguro de cancelar esta reserva?" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">Cancelar</button>
+
+                            {{-- Cancelar: solo confirmada / pendiente --}}
+                            @if($reserva->estado === 'confirmada' || $reserva->estado === 'pendiente')
+                                <button wire:click="eliminar({{ $reserva->idreservas }})"
+                                        wire:confirm="¿Estás seguro de cancelar esta reserva?"
+                                        class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium text-left">
+                                    Cancelar
+                                </button>
                             @endif
-                            <button wire:click="eliminarPermanente({{ $reserva->idreservas }})" wire:confirm="⚠️ ADVERTENCIA: Esto eliminará la reserva PERMANENTEMENTE de la base de datos. ¿Continuar?" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">Eliminar</button>
+
+                            {{-- Revertir: SOLO completadas → vuelve a confirmada --}}
+                            @if($reserva->estado === 'completada' || $reserva->estado === 'cancelada')                                <button wire:click="revertirCompletada({{ $reserva->idreservas }})"
+                                        wire:confirm="¿Revertir la reserva {{ $reserva->folio }} a CONFIRMADA? Se reactivarán habitación y estacionamiento si aplica."
+                                        class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200 font-medium text-left">
+                                    Revertir
+                                </button>
+                            @endif
+
+                            {{-- Eliminar permanente: siempre disponible --}}
+                            <button wire:click="eliminarPermanente({{ $reserva->idreservas }})"
+                                    wire:confirm="⚠️ ADVERTENCIA: Esto eliminará la reserva PERMANENTEMENTE de la base de datos. ¿Continuar?"
+                                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium text-left">
+                                Eliminar
+                            </button>
+
                         </div>
                     </td>
+
                 </tr>
                 @empty
                 <tr>
